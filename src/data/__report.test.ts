@@ -67,4 +67,6 @@ it("report", () => {
     }
   }
   // eslint-disable-next-line
-  con
+  const fs = require("node:fs") as typeof import("node:fs");
+  fs.writeFileSync("C:/Users/sushi/Documents/Protean App/__report.txt", out.join("\n"));
+});
