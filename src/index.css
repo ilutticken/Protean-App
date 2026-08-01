@@ -1,0 +1,72 @@
+@import "@fontsource-variable/inter";
+@import "tailwindcss";
+
+/* Design tokens per docs/research/05-ux-design.md §7 (palette machine-validated). */
+@theme {
+  --font-sans: "Inter Variable", ui-sans-serif, system-ui, sans-serif;
+
+  --color-surface-0: #0e0f13;
+  --color-surface-1: #16181e;
+  --color-surface-2: #1e2129;
+  --color-surface-3: #262a34;
+  --color-ink-1: #e8eaf0;
+  --color-ink-2: #9aa0ae;
+  --color-ink-3: #5c6270;
+  --color-line: #262a34;
+  --color-success: #3dbe7b;
+  --color-danger: #e0564f;
+
+  /* 9 sector hues (fixed assignment, never re-ordered) */
+  --color-sec-pushup: #e1514e;
+  --color-sec-dips: #8d5406;
+  --color-sec-core: #ab9017;
+  --color-sec-squat: #3f7b04;
+  --color-sec-posterior: #00aa95;
+  --color-sec-pull: #006da8;
+  --color-sec-back: #848dde;
+  --color-sec-balance: #7f4bb1;
+  --color-sec-loco: #d1649c;
+
+  /* Athlete accents (validated chart pair) */
+  --color-athlete-a: #00a4c0;
+  --color-athlete-b: #b67c0d;
+  /* chrome-only brighter variants (never chart series) */
+  --color-athlete-a-bright: #35c6e4;
+  --color-athlete-b-bright: #e8a33c;
+}
+
+html {
+  background: var(--color-surface-0);
+  color-scheme: dark;
+}
+
+body {
+  font-family: var(--font-sans);
+  background: var(--color-surface-0);
+  color: var(--color-ink-1);
+  -webkit-font-smoothing: antialiased;
+  overscroll-behavior-y: none;
+}
+
+/* All numerals tabular so ghost→actual and timers don't jitter (doc 05 §7.2) */
+.nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Athlete accent is set as a CSS var on the app root and consumed everywhere */
+.accent-text { color: var(--accent); }
+.accent-bg { background-color: var(--accent); }
+.accent-border { border-color: var(--accent); }
+.accent-ring { --tw-ring-color: var(--accent); }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-thumb { background: var(--color-surface-3); border-radius: 5px; }
+::-webkit-scrollbar-track { background: transparent; }
