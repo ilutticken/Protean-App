@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { TestResult } from "../../lib/types";
+import type { CardioEntry, TestResult } from "../../lib/types";
 import { useApp, updateAthleteState } from "../../lib/useAppData";
 import {
   heatmapValues,
@@ -9,6 +9,7 @@ import {
   type LiftAggregate,
 } from "../../lib/selectors";
 import { radar, AXIS_LABELS, AXIS_ORDER } from "../../lib/scoring";
+import { cardioSummary, formatDuration, formatMeters } from "../../lib/locomotion";
 import { relativeStrength } from "../../lib/strength";
 import { tests as testDefs } from "../../data/norms";
 import { STANDARDS_LEVEL_NAMES, STANDARDS_PULLED_DATE, type LiftKey } from "../../data/standards";
@@ -187,7 +188,177 @@ function LiftsTab() {
         ＋ Test a lift (quick log weight × reps)
       </button>
       <LiftTestSheet open={testOpen} onClose={() => setTestOpen(false)} />
+      <CardioLog />
     </div>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Cardio log — the ONLY producer for the tree's time/distance nodes, since the
+// routine contains no running or swimming (src/lib/locomotion.ts).
+
+function CardioLog() {
+  const store = useApp();
+  const { athlete, athleteState } = store;
+  const [open, setOpen] = useState(false);
+  const log = athleteState.cardioLog ?? [];
+  const summary = cardioSummary(log);
+  const recent = [...log].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, 5);
+
+  return (
+    <>
+      <section className="rounded-2xl bg-surface-1 border border-line p-4">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="font-semibold text-sm">Runs &amp; swims</h2>
+          <button
+            onClick={() => setOpen(true)}
+            className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs"
+          >
+            ＋ Log
+          </button>
+        </div>
+        {log.length === 0 ? (
+          <p className="text-ink-3 text-sm">
+            The routine has no running or swimming, so nothing else can unlock the Loco sector —
+            log a run or swim here and those nodes start moving.
+          </p>
+        ) : (
+          <>
+            <div className="flex gap-4 text-sm mb-2">
+              <span className="text-ink-2">
+                Run <span className="nums text-ink-1">{formatMeters(summary.run.farthestM)}</span>
+                <span className="text-ink-3 text-xs"> farthest · {summary.run.count}</span>
+              </span>
+              <span className="text-ink-2">
+                Swim <span className="nums text-ink-1">{formatMeters(summary.swim.farthestM)}</span>
+                <span className="text-ink-3 text-xs"> farthest · {summary.swim.count}</span>
+              </span>
+            </div>
+            <div className="flex flex-col gap-1">
+              {recent.map((e, i) => (
+                <div key={i} className="flex items-center gap-2 text-sm">
+                  <span className="text-ink-3 text-xs w-12 shrink-0 capitalize">{e.modality}</span>
+                  <span className="text-ink-1 nums">{formatMeters(e.meters)}</span>
+                  {e.seconds !== undefined && (
+                    <span className="text-ink-3 text-xs nums">{formatDuration(e.seconds)}</span>
+                  )}
+                  <span className="text-ink-3 text-xs ml-auto nums">{e.date.slice(5)}</span>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </section>
+      <CardioSheet open={open} onClose={() => setOpen(false)} accent={athlete.accent} />
+    </>
+  );
+}
+
+function CardioSheet({
+  open,
+  onClose,
+  accent,
+}: {
+  open: boolean;
+  onClose: () => void;
+  accent: string;
+}) {
+  const store = useApp();
+  const [modality, setModality] = useState<CardioEntry["modality"]>("run");
+  const [distance, setDistance] = useState("");
+  const [mins, setMins] = useState("");
+  const [secs, setSecs] = useState("");
+
+  // Runs are entered in km, swims in metres — nobody logs a 0.4 km swim.
+  const meters = modality === "run" ? Number(distance) * 1000 : Number(distance);
+
+  function save() {
+    if (!Number.isFinite(meters) || meters <= 0) return;
+    const total = (Number(mins) || 0) * 60 + (Number(secs) || 0);
+    updateAthleteState(store, (s) => ({
+      ...s,
+      cardioLog: [
+        ...(s.cardioLog ?? []),
+        {
+          date: localISODate(),
+          modality,
+          meters: Math.round(meters),
+          ...(total > 0 ? { seconds: total } : {}),
+        },
+      ],
+    }));
+    setDistance("");
+    setMins("");
+    setSecs("");
+    onClose();
+  }
+
+  return (
+    <BottomSheet open={open} onClose={onClose}>
+      <h2 className="text-xl font-bold mb-3">Log a run or swim</h2>
+      <div className="flex flex-col gap-3">
+        <div className="flex gap-2">
+          {(["run", "swim"] as const).map((m) => (
+            <button
+              key={m}
+              onClick={() => {
+                setModality(m);
+                setDistance("");
+              }}
+              className={`flex-1 rounded-lg px-3 py-2 text-sm border capitalize ${
+                modality === m
+                  ? "bg-surface-3 border-ink-3 text-ink-1"
+                  : "bg-surface-1 border-line text-ink-2"
+              }`}
+            >
+              {m}
+            </button>
+          ))}
+        </div>
+
+        <div className="flex gap-2 items-center">
+          <input
+            className="flex-1 rounded-lg bg-surface-1 border border-line px-3 py-2.5 nums outline-none focus:border-ink-3"
+            placeholder={modality === "run" ? "distance km" : "distance m"}
+            inputMode="decimal"
+            value={distance}
+            onChange={(e) => setDistance(e.target.value.replace(/[^\d.]/g, ""))}
+          />
+          <span className="text-ink-3 text-sm w-6">{modality === "run" ? "km" : "m"}</span>
+        </div>
+
+        <div className="flex gap-2 items-center">
+          <input
+            className="w-24 rounded-lg bg-surface-1 border border-line px-3 py-2.5 nums outline-none focus:border-ink-3"
+            placeholder="min"
+            inputMode="numeric"
+            value={mins}
+            onChange={(e) => setMins(e.target.value.replace(/[^\d]/g, ""))}
+          />
+          <span className="text-ink-3 text-sm">min</span>
+          <input
+            className="w-24 rounded-lg bg-surface-1 border border-line px-3 py-2.5 nums outline-none focus:border-ink-3"
+            placeholder="sec"
+            inputMode="numeric"
+            value={secs}
+            onChange={(e) => setSecs(e.target.value.replace(/[^\d]/g, ""))}
+          />
+          <span className="text-ink-3 text-sm">sec</span>
+        </div>
+
+        <p className="text-ink-3 text-xs">
+          One entry = one continuous effort; distances are never added together. Time is optional —
+          it is only needed for the 5K/10K/half/marathon percentile tiers.
+        </p>
+        <button
+          onClick={save}
+          className="rounded-xl py-3 font-semibold text-surface-0"
+          style={{ background: accent }}
+        >
+          Save
+        </button>
+      </div>
+    </BottomSheet>
   );
 }
 

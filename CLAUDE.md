@@ -24,6 +24,9 @@ skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, 
   (PLAN-GENERATOR.md §9.6). New slot exercises need a node whose id IS the exercise id. Node names
   must pack into 2 lines for the hex map; `skills-ext.test.ts` enforces it.
 - Straight-arm pacing is **advisory by default** — warn, never block (PLAN.md "Tendon pacing").
+- Runs/swims have no home in the routine: `AthleteState.cardioLog` is the sole producer for the
+  tree's `time`/`distance` nodes, via `src/data/locomotion-sources.ts` (explicit allowlist — a new
+  locomotion node must be registered there or excluded with a reason) and `src/lib/locomotion.ts`.
 - Skill tree: core lines live in `src/data/skills.ts`; per-sector additions go in
   `src/data/skills-ext/<sector>.ts` using the constructors in `src/data/skill-helpers.ts`.
   Extensions may use negative rings for pre-hub beginner content and `rewire` to splice

@@ -270,6 +270,19 @@ export interface LiftEntry {
   reps: number;
 }
 
+/**
+ * A run or swim. The routine contains neither, so this log is the ONLY producer for the
+ * tree's `time` / `distance` criteria — see src/lib/locomotion.ts.
+ * One entry = one continuous effort; distances are never summed across entries.
+ */
+export interface CardioEntry {
+  date: string;
+  modality: "run" | "swim";
+  meters: number;
+  /** Optional — required only to credit the timed `run_speed.*` tiers. */
+  seconds?: number;
+}
+
 export interface AthleteState {
   skillProgress: Record<string, SkillProgress>;
   slotState: Record<string, SlotState>;
@@ -277,6 +290,8 @@ export interface AthleteState {
   slotAlternatives: Record<string, string>;
   /** Quick-logged lift tests (Stats → Test a lift). */
   liftLog?: LiftEntry[];
+  /** Logged runs and swims (Stats → Log a run or swim). */
+  cardioLog?: CardioEntry[];
 }
 
 /**

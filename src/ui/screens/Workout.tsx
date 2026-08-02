@@ -5,7 +5,8 @@ import { exercises } from "../../data/exercises";
 import { useApp, updateAthleteState } from "../../lib/useAppData";
 import { applySession, ghost, restSuggestion, targetFor, type ProgressionEvent } from "../../lib/progression";
 import { resolveSlotState, stampSlotState } from "../../lib/slot-identity";
-import { athleteSessions, slotById } from "../../lib/selectors";
+import { sessionCredit, type NodeCredit, type SessionCredit } from "../../lib/credit";
+import { athleteSessions, skillStatuses, slotById } from "../../lib/selectors";
 import { SECTORS } from "../sectors";
 import RestTimer from "../components/RestTimer";
 import IsoTimer from "../components/IsoTimer";
@@ -67,7 +68,11 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
   const [isoDone, setIsoDone] = useState(false);
   const [warmupOpen, setWarmupOpen] = useState(true);
   const [warmupDone, setWarmupDone] = useState(false);
-  const [summary, setSummary] = useState<{ events: ProgressionEvent[]; setCount: number } | null>(null);
+  const [summary, setSummary] = useState<{
+    events: ProgressionEvent[];
+    setCount: number;
+    credit: SessionCredit;
+  } | null>(null);
   const [holdTimer, setHoldTimer] = useState<{ slotId: string; setIx: number; sec: number } | null>(null);
 
   // Straight-arm pacing: in "advisory" mode the 21-day rate limit becomes 0 days, so
@@ -168,8 +173,14 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
       isoDone,
       warmupDone,
     };
+    // What did this session actually move in the tree? Diff the statuses across it —
+    // the direct answer to "does doing the workout mark off stunts?".
+    const credit = sessionCredit(
+      skillStatuses(data, athlete, athleteState),
+      skillStatuses({ ...data, sessions: [...data.sessions, session] }, athlete, athleteState),
+    );
     store.update((dd) => ({ ...dd, sessions: [...dd.sessions, session] }));
-    setSummary({ events: allEvents, setCount });
+    setSummary({ events: allEvents, setCount, credit });
   }
 
   // ------- mobility day -------
@@ -323,6 +334,7 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
           <div>
             <h2 className="text-xl font-bold mb-1">Session saved</h2>
             <p className="text-ink-2 text-sm mb-4">{summary.setCount} sets logged for {athlete.name}.</p>
+            <CreditSummary credit={summary.credit} />
             <div className="flex flex-col gap-2">
               {summary.events.length === 0 && (
                 <p className="text-ink-3 text-sm">Keep stacking sessions — hit every set target twice in a row to advance a chain step.</p>
@@ -344,6 +356,62 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
     </div>
   );
 }
+
+/** What the session moved in the skill tree — the credit half of the summary. */
+function CreditSummary({ credit }: { credit: SessionCredit }) {
+  if (credit.total === 0) {
+    return (
+      <p className="text-ink-3 text-sm mb-3">
+        No tree movement this session — every node these exercises feed is already at its best.
+      </p>
+    );
+  }
+  const groups: { kind: NodeCredit["kind"]; label: string; icon: string; rows: NodeCredit[] }[] = [
+    { kind: "achieved", label: "achieved", icon: "✓", rows: credit.achieved },
+    { kind: "unlocked", label: "unlocked", icon: "◇", rows: credit.unlocked },
+    { kind: "progressed", label: "moved", icon: "→", rows: credit.progressed },
+  ];
+  const headline = groups
+    .filter((g) => g.rows.length > 0)
+    .map((g) => `${g.rows.length} ${g.label}`)
+    .join(" · ");
+
+  // Cap the TOTAL rows, not one bucket. A first-ever Legs session credits 25 nodes
+  // (12 achieved + 13 unlocked) and would otherwise bury the sheet; achievements
+  // outrank unlocks outrank movement. The headline still counts everything.
+  const MAX_ROWS = 8;
+  const flat = groups.flatMap((g) => g.rows.map((r) => ({ ...r, icon: g.icon, kind: g.kind })));
+  const shown = flat.slice(0, MAX_ROWS);
+
+  return (
+    <div className="mb-3">
+      <div className="text-xs text-ink-3 uppercase tracking-wide mb-1.5">Skill tree · {headline}</div>
+      <div className="flex flex-col gap-1">
+        {shown.map((r) => (
+          <div key={r.nodeId} className="flex items-center gap-2 text-sm">
+            <span className={r.kind === "achieved" ? "text-success" : "text-ink-3"}>{r.icon}</span>
+            <span className={r.kind === "achieved" ? "text-ink-1 font-medium" : "text-ink-2"}>
+              {r.name}
+            </span>
+            {r.to !== undefined && (
+              <span className="text-ink-3 text-xs nums ml-auto">
+                {r.from !== undefined && r.from > 0 ? `${round1(r.from)} → ` : ""}
+                {round1(r.to)}
+              </span>
+            )}
+          </div>
+        ))}
+        {flat.length > shown.length && (
+          <div className="text-ink-3 text-xs">
+            +{flat.length - shown.length} more — see the Stunts map
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+const round1 = (n: number) => Math.round(n * 10) / 10;
 
 function EventLine({ e }: { e: ProgressionEvent }) {
   const slot = slotById[e.slotId];

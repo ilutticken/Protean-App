@@ -6,6 +6,7 @@ import { useApp, updateAthlete, updateAthleteState } from "../../lib/useAppData"
 import { exportJson, importJson, save } from "../../lib/storage";
 import { isInStepSlot, targetFor } from "../../lib/progression";
 import { resolveSlotState } from "../../lib/slot-identity";
+import { creditedNodes } from "../../lib/credit";
 import { localISODate } from "../../lib/dates";
 import { cmToFeetInches, feetInchesToCm, formatHeight, fromKg, toKg } from "../../lib/units";
 import { SECTORS } from "../sectors";
@@ -367,6 +368,30 @@ function ChainBoard({
           progress {confirms}/2 sessions
         </div>
       )}
+      <SlotFeeds slot={slot} current={current} inStep={inStep} />
     </section>
+  );
+}
+
+/** What the CURRENT step of this slot credits in the skill tree. */
+function SlotFeeds({ slot, current, inStep }: { slot: Slot; current: number; inStep: boolean }) {
+  const step = slot.chain[inStep ? 0 : Math.min(current, slot.chain.length - 1)];
+  const exIds = step?.ex ? [step.ex] : (step?.opts ?? []).map((o) => o.ex);
+  const nodes = [...new Map(exIds.flatMap((id) => creditedNodes(id)).map((n) => [n.id, n])).values()];
+  if (nodes.length === 0) return null;
+
+  const shown = nodes.slice(0, 3);
+  return (
+    <div className="text-xs text-ink-3 mt-1.5">
+      feeds{" "}
+      {shown.map((n, i) => (
+        <span key={n.id}>
+          {i > 0 && ", "}
+          <span className={n.isStunt ? "text-ink-1 font-medium" : "text-ink-2"}>{n.name}</span>
+          {n.isStunt && " ★"}
+        </span>
+      ))}
+      {nodes.length > shown.length && <span> +{nodes.length - shown.length}</span>}
+    </div>
   );
 }

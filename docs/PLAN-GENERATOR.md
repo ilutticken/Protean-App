@@ -37,9 +37,10 @@ band targets and R-rules), auto-programming acrobatics, or building a periodizat
 
 > **Stale as of 2026-08-02 — kept as the audit that motivated the work.** §2.2/§2.3/§2.4 describe
 > the tree *before* the conditioning pass in §9.6. Current numbers: **557 nodes** (was 501),
-> **168 auto-marked** (was 126), **0 routine exercises crediting nothing** (was 42), **0 slots dead
-> at every step** (was 6), **30 stunts** (was 21). §2.5's four structural causes still hold, and
-> cause 4 (the locomotion producer, 41 nodes) is still open — see §9.8.
+> **168 auto-marked by the routine** (was 126) and **228 reachable without manual marking** (§9.8),
+> **0 routine exercises crediting nothing** (was 42), **0 slots dead at every step** (was 6),
+> **30 stunts** (was 21). §2.5 causes 1–3 still hold; cause 4 (no locomotion producer) is FIXED —
+> see §9.8.
 
 ### 2.1 How Plan and Tree touch today
 
@@ -660,12 +661,44 @@ roster went from 21 to 30, adding the weighted-calisthenics tier that was missin
 - **Conditioning** (new): the four in §9.6.
 - **Box jump** (new line, §9.9).
 
-### 9.8 Still open — neither blocks Phase 1
+### 9.8 The locomotion producer *(Phase 1 item — shipped)*
 
-- **The locomotion producer.** 41 `time`/`distance` nodes still cannot auto-credit because
-  `selectors.skillStatuses()` never passes `locomotionBest`. This is the single largest remaining
-  auto-credit win and is Phase 1 work in §8; nothing above depends on it.
-- **Tendon-block consent — answered, and the answer removes a §7 guardrail.** See §9.10.
+The 41 `time`/`distance` nodes were dead twice over: `skillStatuses()` never passed
+`locomotionBest`, **and there was nothing to pass** — the routine contains no running and no
+swimming (`legs-11`/`full-09`/`full-10` are carries, skips and 100-Ups, all counted in steps).
+Wiring alone would have changed nothing.
+
+Shipped as three pieces:
+
+- **`AthleteState.cardioLog`** (`CardioEntry`: date, modality, metres, optional seconds) with a
+  logging sheet on Stats. Additive under decision #14 — no migration.
+- **`src/data/locomotion-sources.ts`** — the explicit registry of which nodes a logged effort may
+  credit, mirroring `skill-exercise-alias.ts`'s safety rule. Two nodes are deliberately excluded
+  because their criterion is a *session shape*, not a distance: `run_base.strides` (6 × 100 m with
+  walk-backs) and `run_base.hill_sprints` (10 × 80 m uphill). A 5 km run covers both distances and
+  trains neither. A test asserts the registry covers every other time/distance node, so a new
+  locomotion node fails the build rather than silently joining the dead set.
+- **`src/lib/locomotion.ts::locomotionBestFrom()`** — distance nodes take the *farthest* single
+  effort, timed tiers the *fastest* effort of at least that race distance. Efforts are never
+  summed: three 2 km runs are not a 5 km run. A longer effort is admissible evidence for a shorter
+  tier (a 10 km time bounds a 5 km threshold); the reverse is not.
+
+Verified end-to-end: one logged 5 km in 30:00 takes the Loco sector from 0 to 8 nodes — the seven
+distance rungs from Brisk Walk to 5K, plus `run_speed.5k_t2` (30:00 beats the 31:28 male
+threshold, and the per-sex threshold is applied). `swim_base.water_safety` and
+`swim_base.open_water_400m` stay attestation-only, as addendum-1 §3.4/§4 require.
+
+Coverage now, counted two ways:
+
+| | Nodes | |
+|---|---|---|
+| Auto-marked by the **routine alone** | 168 / 557 (30%) | 141 direct id · 22 alias · 5 e1RM |
+| **Reachable without ever marking manually** | **228 / 557 (41%)** | the above + 39 cardio log + 21 quick lift-log |
+
+At the audit it was 126/501 (25%) either way, because neither the cardio log nor a locomotion
+producer existed. The 259 still without a source are the §2.5 cause-3 problem — mostly `hold`
+positions (planche lean, tuck front lever, wall handstand) that the week has nowhere to log. That
+is Phase 2's `node-trainers.ts`, not a wiring gap.
 
 ### 9.9 Box jump line *(new, athlete-requested)*
 

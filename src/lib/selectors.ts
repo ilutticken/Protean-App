@@ -16,6 +16,7 @@ import { exercises, standardsKeyByExercise, type StandardsLiftKey } from "../dat
 import { skills } from "../data/skills";
 import { skillExerciseAlias } from "../data/skill-exercise-alias";
 import { computeSkillStatuses, sectorCompletion, type ExerciseBest } from "./skilltree";
+import { locomotionBestFrom } from "./locomotion";
 import { e1rm, bwExerciseLoad, standardsLevel, type StandardsLevelResult } from "./strength";
 import { radarAnchorsBySex } from "../data/norms";
 import type { RadarInput } from "./scoring";
@@ -221,6 +222,9 @@ export function skillStatuses(data: AppData, athlete: Athlete, state: AthleteSta
     manual: state.skillProgress,
     bestByExercise: bests,
     e1rmByLift: e1rmByLiftForTree(aggs, athlete.bodyweightKg),
+    // The routine has no running or swimming, so the cardio log is the only producer
+    // for `time` / `distance` criteria — without this, 41 nodes are permanently locked.
+    locomotionBest: locomotionBestFrom(state.cardioLog),
     bodyweightKg: athlete.bodyweightKg,
     sex: athlete.sex,
   });
