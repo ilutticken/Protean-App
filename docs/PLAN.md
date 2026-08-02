@@ -44,6 +44,10 @@ science-backed strength/performance estimates, and a stunt skill tree.
 11. **Streaks are weekly schedule-relative** (≥4/5 planned sessions), never daily. (doc 05)
 12. **Iso protocol**: overcoming iso lives in the daily warm-up (4×7 s × 3 angles, day-pattern
     presets in seed); quasi-iso finishers 1×60 s, max 3/session. (addendum-2 §5)
+13. **Every sector must be startable by an untrained beginner** — each has ring-0 nodes with no
+    prereqs (wall push-up, dead hang, chair sit-to-stand…), enforced by `skills-ext.test.ts`.
+    Cross-sector prereq edges must survive per-sector ring normalization; the same test names
+    both sectors on violation so a future re-floor fails loudly instead of inverting silently.
 
 **Deliberate deviation from doc 05**: persistence is localStorage (synchronous, ~300 KB/yr of logs
 for 2 athletes — far under the 5 MB limit) + `navigator.storage.persist()` + JSON export/import,
@@ -62,7 +66,11 @@ src/
   lib/useAppData.ts   store hook + context                     (DONE)
   data/seed-plan.ts   addendum-2 §3 JSON, typed                (agent A)
   data/exercises.ts   ~95 exercises: sector/pattern/planes/bwLoadFactor (agent A)
-  data/skills.ts      full skill tree: doc 01 §6 + addendum-1 + addendum-2 §4 (agent B)
+  data/skills.ts      core skill lines: doc 01 §6 + addendum-1 + addendum-2 §4 (agent B)
+  data/skill-helpers.ts   shared node/criterion constructors + SectorExtension type
+  data/skills-ext/*.ts    per-sector expansions (beginner on-ramps + intermediate rungs);
+                          may use negative/fractional rings and `rewire` to splice prereqs
+                          onto existing hubs; buildSkills() merges + normalizes per sector
   data/standards.ts   StrengthLevel kg tables ×9 lifts ×2 sexes, DOTS/GL coefficients (agent C)
   data/norms.ts       field-test norm tables by sex + test registry (agent D)
   lib/strength.ts     e1RM hybrid, bw-load conversion, table lookup, DOTS, level classify (agent C)

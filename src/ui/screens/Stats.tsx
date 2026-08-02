@@ -52,8 +52,11 @@ const TESTABLE_LIFTS: { exerciseId: string; label: string }[] = [
   { exerciseId: "barbell.row", label: "Barbell Row" },
   { exerciseId: "barbell.curl", label: "Curl" },
   { exerciseId: "barbell.hip_thrust", label: "Hip Thrust" },
-  { exerciseId: "pull.weighted_pullup", label: "Weighted Pull-Up (added kg)" },
-  { exerciseId: "dip.weighted_dip", label: "Weighted Dip (added kg)" },
+  // Seed ids (not the pull.weighted_pullup / dip.weighted_dip aliases): identical
+  // bwLoadFactor and standards key, but these are what skillExerciseAlias sources
+  // from, so a quick-logged set also feeds the weighted pull-up / dip skill rungs.
+  { exerciseId: "one_arm_pullup.wpu_25pct", label: "Weighted Pull-Up (added kg)" },
+  { exerciseId: "dip.dip_weighted", label: "Weighted Dip (added kg)" },
 ];
 
 export default function Stats() {

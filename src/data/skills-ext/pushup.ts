@@ -128,10 +128,12 @@ export const pushupExt: SectorExtension = {
       "one_arm_pushup.pushup",
       "push.fingertip_pushup_knees",
     ], { description: "3×10 from the feet on fingertips (slot push-06, band 0). Progress by months, not weeks." }),
-    node("pushup_base.knuckle_pushup", "Knuckle Push-Up", S, 0.5, reps(15, 3), ["one_arm_pushup.pushup"], {
-      description:
-        "Side branch: on the first two knuckles with a straight wrist, on a mat first. 3×15. Wrist-neutral, so it is often kinder than flat-palm work.",
-    }),
+    // NOTE (integration): a knuckle push-up node was authored here as
+    // `pushup_base.knuckle_pushup`, but the dips_planche_hs sector owns the whole knuckle
+    // ladder (push.knuckle_pushup_wall -> _incline -> _knees -> push.knuckle_pushup) using
+    // the CATALOG exercise ids, so those nodes auto-feed from logged push-03 sets while a
+    // pushup-sector copy never could. The duplicate was removed at integration; use
+    // `push.knuckle_pushup` (dips_planche_hs) for knuckle work.
     node("pushup_decline.feet_30cm", "Decline Push-Up", S, 0.5, reps(12, 3), ["one_arm_pushup.pushup"], {
       description: "Feet on a ~30 cm box: ≈70% BW vs 64% flat (Ebben 2011). 3×12.",
     }),

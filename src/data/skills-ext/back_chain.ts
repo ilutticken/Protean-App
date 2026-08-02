@@ -90,15 +90,16 @@ export const backChainExt: SectorExtension = {
       description: "2×10 at ≈40% bodyweight. Seed full-02 band-1 step; logged sets feed this node.",
     }),
 
-    // Level 5 (ring -1): first real strength standard + clean prep.
-    node("hinge_ramp.deadlift_1_0xbw", "Deadlift 1.0×BW", S, -1, e1rmRatio("deadlift", 1.0), [
-      "hinge_ramp.rdl_half_bw",
-      "spinal_ext.back_ext_hold",
-    ], {
-      evidence: "B",
-      description:
-        "Conventional deadlift 1RM = bodyweight — StrengthLevel ♂ 'beginner' (doc 01 §4). The rung the posterior sector's 1.5×BW node has been missing beneath it. ♀ equivalent ≈0.75×BW.",
-    }),
+    // Level 5 (ring -1): clean prep.
+    // NOTE (integration): a `hinge_ramp.deadlift_1_0xbw` node (e1rm deadlift 1.0×BW) was
+    // authored here as "the rung the posterior sector's 1.5×BW node has been missing
+    // beneath it". The posterior author added exactly that rung in the canonical milestone
+    // namespace — `barbell_deadlift.1_0xbw`, rewired under `barbell_deadlift.1_5xbw` — so
+    // the two were the SAME criterion under two names and would have lit up together.
+    // Per this file's own open issue ("keep one and delete the other") the back_chain copy
+    // was removed at integration; the deadlift ladder lives in posterior. The dependents
+    // below now hang off `hinge_ramp.rdl_half_bw`, which reads better anyway (RDL 0.5×BW
+    // -> RDL 1.0×BW) and keeps the hinge-strength gate under the power clean.
     node("power_ramp.hang_high_pull", "Hang High Pull", S, -1, wreps(5, 0.5, 3), ["power_ramp.kb_swing"], {
       evidence: "D",
       description: "3×5 at ≥50% bodyweight from the hang: violent hip extension, elbows high and outside, bar to sternum.",
@@ -112,7 +113,7 @@ export const backChainExt: SectorExtension = {
     node("power_ramp.power_clean_0_75x", "Power Clean 0.75×BW", S, -0.5, e1rmRatio("power_clean", 0.75), [
       "power_ramp.hang_high_pull",
       "power.sandbag_clean",
-      "hinge_ramp.deadlift_1_0xbw",
+      "hinge_ramp.rdl_half_bw",
     ], {
       evidence: "B",
       description: "0.75×BW power clean — StrengthLevel ♂ 'novice' (doc 01 §4). Coached technique assumed; ♀ ≈0.60×BW.",
@@ -126,7 +127,7 @@ export const backChainExt: SectorExtension = {
       description:
         "3×30 s, legs straight, chest open, hands under shoulders. Builds the shoulder-extension tolerance doc 01 §3.12 names as THE gate before any wall bridge — without it the lumbar spine takes the extension.",
     }),
-    node("hinge_ramp.rdl_bw", "RDL 1.0×BW", S, 0.5, wreps(8, 1.0, 3), ["hinge_ramp.deadlift_1_0xbw"], {
+    node("hinge_ramp.rdl_bw", "RDL 1.0×BW", S, 0.5, wreps(8, 1.0, 3), ["hinge_ramp.rdl_half_bw"], {
       description: "3×8 Romanian deadlift at bodyweight — the hamstring-length work that carries the deadlift past 1.5×BW.",
     }),
     node("spinal_ext.weighted_ext", "Weighted Back Ext", S, 0.5, wreps(10, 0.25, 3), ["spinal_ext.back_ext_hold"], {

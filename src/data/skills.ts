@@ -116,6 +116,24 @@ export const femaleBwRatioOverride: Record<string, number> = {
   "power_stunts.bw_power_clean": 0.8,
   "power_stunts.bw_clean_and_press": 0.8,
   "power_stunts.bw_snatch": 0.85,
+
+  // --- Added at integration for the skills-ext/* nodes -----------------------------------
+  // Every sector author flagged that their new ratio nodes had no ♀ row and that skills.ts
+  // was not theirs to edit, so women were being gated at the MALE ratio on new rungs while
+  // the shipped rungs above and below them were adjusted. Each entry below reuses the
+  // multiplier already applied to a sibling node on the SAME line, so no new policy is
+  // introduced: bench/OHP/pull ×0.70, squat ×0.72, deadlift ×0.78, power ×0.80 (doc 01 §4.1/§6).
+  "barbell_bench.0_5xbw": 0.35, // ×0.70, cf. 0_75xbw 0.525 / 1_0xbw 0.75
+  "barbell_ohp.0_35xbw": 0.245, // ×0.70, cf. 0_5xbw 0.35 / 1_0xbw 0.70
+  "barbell_squat.0_75xbw": 0.54, // ×0.72, cf. 1_0xbw 0.72 — without this ♀ 0.75x gates ABOVE ♀ 1.0x
+  "barbell_deadlift.1_0xbw": 0.78, // ×0.78, cf. 1_5xbw 1.17 / 2_0xbw 1.5
+  "barbell_deadlift.1_25xbw": 0.975,
+  "barbell_deadlift.2_25xbw": 1.755,
+  "power_ramp.power_clean_0_75x": 0.6, // ×0.80, cf. power_stunts.bw_power_clean 0.8
+  "dip.dip_weighted_10": 0.07, // ×0.70, cf. dip.weighted_half_bw 0.5 -> 0.35
+  "pull_base.wpu_10pct": 0.07, // ×0.70, cf. one_arm_pullup.wpu_50pct 0.5 -> 0.35
+  "pull_base.wpu_35pct": 0.245,
+  "pull_base.wpu_70pct": 0.49,
 };
 
 // ---------------------------------------------------------------------------

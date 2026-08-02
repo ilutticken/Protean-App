@@ -570,24 +570,38 @@ function CenterFigure({ cx, cy }: { cx: number; cy: number }) {
   );
 }
 
-/** Two-line wrap so labels stay inside their NODE_ARC slot (~112 world units). */
-function labelLines(name: string): string[] {
+/**
+ * Wrap a node name to at most MAX_LINES lines of ~MAX chars so it stays inside its
+ * NODE_ARC slot (~112 world units). Anything that still does not fit is ELLIPSIZED —
+ * silently dropping trailing words made distinct skills read identically.
+ */
+export function labelLines(name: string): string[] {
   const MAX = 15;
+  const MAX_LINES = 3;
   if (name.length <= MAX) return [name];
+
   const words = name.split(" ");
   const lines: string[] = [];
   let cur = "";
   for (const w of words) {
-    if (!cur) cur = w;
-    else if ((cur + " " + w).length <= MAX) cur += " " + w;
-    else {
-      lines.push(cur);
-      cur = w;
+    const candidate = cur ? `${cur} ${w}` : w;
+    if (candidate.length <= MAX) {
+      cur = candidate;
+      continue;
     }
-    if (lines.length === 2) break;
+    if (cur) lines.push(cur);
+    cur = w;
+    if (lines.length === MAX_LINES) break;
   }
-  if (lines.length < 2 && cur) lines.push(cur);
-  return lines.slice(0, 2).map((l) => (l.length > MAX + 3 ? l.slice(0, MAX) + "…" : l));
+  if (lines.length < MAX_LINES && cur) lines.push(cur);
+
+  // Hard-truncate any single over-long word, and mark dropped content.
+  const truncated = lines.slice(0, MAX_LINES).map((l) => (l.length > MAX ? l.slice(0, MAX - 1) + "…" : l));
+  const rendered = truncated.join(" ").replace(/…/g, "");
+  if (rendered.length < name.replace(/\s+/g, " ").length && !truncated[truncated.length - 1].endsWith("…")) {
+    truncated[truncated.length - 1] = truncated[truncated.length - 1].slice(0, MAX - 1) + "…";
+  }
+  return truncated;
 }
 
 function mid(pts: { x: number; y: number }[]) {

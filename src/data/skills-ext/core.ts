@@ -164,7 +164,9 @@ export const coreExt: SectorExtension = {
     }),
 
     // ----------------------------------------------------------------- ring 4.5
-    node("core.pike_compression", "Pike Compression Lift", SECTOR, 4.5, reps(10, 3), ["l_sit_manna.straddle_l"], {
+    // Name kept to 2 hex-map lines of <=15 chars: "Pike Compression Lift" packs as
+    // "Pike" / "Compression" and StuntMap silently DROPS the trailing "Lift".
+    node("core.pike_compression", "Pike Heel Lift", SECTOR, 4.5, reps(10, 3), ["l_sit_manna.straddle_l"], {
       description:
         "Seated in a full pike on blocks: lift both heels off the floor and hold 2 s, 3×10. Doc 01 §3.10 is explicit that active pike compression — not strength — is the V-sit limiter, so it gets its own gate.",
     }),

@@ -14,6 +14,7 @@ import type {
 import { seedPlan } from "../data/seed-plan";
 import { exercises, standardsKeyByExercise, type StandardsLiftKey } from "../data/exercises";
 import { skills } from "../data/skills";
+import { skillExerciseAlias } from "../data/skill-exercise-alias";
 import { computeSkillStatuses, sectorCompletion, type ExerciseBest } from "./skilltree";
 import { e1rm, bwExerciseLoad, standardsLevel, type StandardsLevelResult } from "./strength";
 import { radarAnchorsBySex } from "../data/norms";
@@ -95,6 +96,14 @@ export function bestByExercise(
   for (const l of state.liftLog ?? []) {
     bump(l.exerciseId, { maxRepsPerSet: l.reps, maxWeightKg: l.weightKg });
     pair(l.exerciseId, l.reps, l.weightKg);
+  }
+  // Republish source bests (weightedSetBests pairs included) under the aliased skill-node
+  // ids so on-ramp rungs auto-achieve — skilltree.criterionMet keys on node.id, and these
+  // node ids are not exercise ids. Never clobbers a key that carries its own logged data.
+  for (const nodeId in skillExerciseAlias) {
+    if (out[nodeId] !== undefined) continue;
+    const src = out[skillExerciseAlias[nodeId]];
+    if (src !== undefined) out[nodeId] = src;
   }
   return out;
 }
