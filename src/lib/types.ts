@@ -247,6 +247,14 @@ export interface TestResult {
 export interface SlotState {
   stepIndex: number; // current working chain position (0 = hardest)
   optIndex?: number;
+  /**
+   * Stable identity of the step `stepIndex` points at — see `slot-identity.ts`.
+   * Chains gain rungs over time; a bare index would silently re-point at a
+   * different exercise, so the key is what actually carries the progress.
+   * Absent on in-step slots, where stepIndex is a T-index, not a position.
+   */
+  stepKey?: string;
+  optKey?: string;
   workingWeightKg?: number;
   /** Sessions in a row meeting workTarget (advance at config.confirmSessions). */
   confirmCount: number;
@@ -271,12 +279,40 @@ export interface AthleteState {
   liftLog?: LiftEntry[];
 }
 
-export interface AppData {
-  version: number;
-  athletes: Athlete[];
-  activeAthleteId: string;
+/**
+ * An athlete carried over from the v1 multi-athlete schema who is not this
+ * install's athlete. Never read by the app — retained so that collapsing to a
+ * single athlete cannot destroy history, and so it still round-trips through
+ * export/import (the owner can recover it into their own install).
+ */
+export interface ArchivedAthlete {
+  athlete: Athlete;
+  state: AthleteState;
   sessions: SessionLog[];
   tests: TestResult[];
-  perAthlete: Record<string, AthleteState>;
-  settings: { theme: "dark" | "light" };
+}
+
+/**
+ * Protean is single-athlete by design: storage is local-first, so two people run
+ * two independent installs rather than sharing one device's localStorage.
+ */
+export interface AppData {
+  version: number;
+  /** Null only before onboarding. */
+  athlete: Athlete | null;
+  state: AthleteState;
+  sessions: SessionLog[];
+  tests: TestResult[];
+  settings: {
+    theme: "dark" | "light";
+    /**
+     * How the straight-arm (`sa`) 21-day step rate limit behaves.
+     *  - "advisory" (default): the warning is shown, advancement is never blocked.
+     *  - "guided": addendum-2 §1.3 behaviour — advancement waits out the 21 days.
+     * Advisory is the default by the athlete's explicit direction (years of lifting
+     * background); see PLAN.md "Tendon pacing".
+     */
+    tendonPacing: "advisory" | "guided";
+  };
+  archived?: ArchivedAthlete[];
 }

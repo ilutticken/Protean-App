@@ -48,10 +48,39 @@ science-backed strength/performance estimates, and a stunt skill tree.
     prereqs (wall push-up, dead hang, chair sit-to-stand…), enforced by `skills-ext.test.ts`.
     Cross-sector prereq edges must survive per-sector ring normalization; the same test names
     both sectors on violation so a future re-floor fails loudly instead of inverting silently.
+14. **Content is additive: authoring must never destroy logged progress.** Adding an exercise, a
+    chain rung, or a skill node is a routine content edit and requires no migration. What this
+    rests on, and what may therefore never be broken:
+    - **Skill progress is derived, never stored as truth** — `skillStatuses()` recomputes from the
+      session log, so a new node simply starts appearing. Only attestations are authored state.
+    - **Session logs are self-describing** — `EntryLog` stores the resolved `exerciseId`, so a
+      historical entry keeps its meaning no matter how its slot is later edited.
+    - **Slot progress is keyed, not positional** — `SlotState.stepIndex` is a cache; `stepKey`
+      (`slot-identity.ts`) is the progress. Stamp on write, resolve on read. Without this, adding
+      one rung silently reassigns the athlete to a different exercise with their confirm count
+      intact. Exempt: in-step slots, where `stepIndex` is a T-index into `tiers`.
+    - **Exercise and node ids are permanent.** Renaming one is a data migration, not an edit;
+      prefer adding a new id and leaving the old one in place.
+    - **Migrations archive, never drop** — see `AppData.archived`, written by v1 → v2.
 
-**Deliberate deviation from doc 05**: persistence is localStorage (synchronous, ~300 KB/yr of logs
-for 2 athletes — far under the 5 MB limit) + `navigator.storage.persist()` + JSON export/import,
-instead of Dexie/IndexedDB. Revisit only if photos/videos are ever added.
+**Tendon pacing** (2026-08-02, athlete-directed): the straight-arm 21-day step rate limit from
+addendum-2 §1.3 is now a **setting**, defaulting to `advisory`. `seedPlan.config` is unchanged at
+21 days and `applySession` is unchanged; `Workout.tsx` passes `saStepRateLimitDays: 0` in advisory
+mode, so the warning still renders and the advance is never blocked. The athletes are experienced
+lifters and asked explicitly for guidance rather than a gate. The evidence behind the number is
+undisturbed and Plan → Settings restores enforcement with one tap. This is a *presentation*
+override of decision-level pacing, not a re-derivation of it — do not "simplify" it by editing the
+seed config.
+
+**Single athlete** (schema v2, 2026-08-02): storage is local-first, so two people run two
+independent installs rather than sharing one device's localStorage. `AppData` holds one `athlete`
+and one `state`. The v1 → v2 migration keeps the active athlete and moves the other into
+`AppData.archived` — retained, never read, still exported, so upgrading cannot destroy a partner's
+history.
+
+**Deliberate deviation from doc 05**: persistence is localStorage (synchronous, ~150 KB/yr of logs
+— far under the 5 MB limit) + `navigator.storage.persist()` + JSON export/import, instead of
+Dexie/IndexedDB. Revisit only if photos/videos are ever added.
 
 ## Architecture
 
@@ -91,12 +120,13 @@ src/
 3. **Stunts** — the hex map: 9-sector radial SVG skill tree, pan/zoom single transform, node states
    (locked/available/in-progress/achieved), bottom-sheet detail with criterion + prereq chain +
    attestation for acrobatics; list fallback.
-4. **Stats** — 7-axis radar per athlete (per-sex anchored), e1RM trend lines per lift, volume
-   heatmap, symmetry flags, DOTS-normalized opt-in comparison of the two athletes, field-test
-   entry (8-test battery, retest nudge every 6–8 weeks).
-5. **Profile** — athlete switcher (persistent header control), bodyweight log, unit toggle,
-   export/import, author-questions (Q1–Q8) confirmation, about/methodology page that cites the
-   research docs honestly (evidence tiers).
+4. **Stats** — 7-axis radar (per-sex anchored), e1RM trend lines per lift, volume heatmap,
+   symmetry flags, field-test entry (8-test battery, retest nudge every 6–8 weeks). The
+   DOTS-normalized two-athlete comparison was removed with the single-athlete collapse; the
+   normalization itself (`dots`, `relativeStrength`) is retained for level naming.
+5. **Profile** — profile chip in the header, bodyweight log, unit toggle, export/import,
+   author-questions (Q1–Q8) confirmation, about/methodology page that cites the research docs
+   honestly (evidence tiers).
 
 ## Build order
 

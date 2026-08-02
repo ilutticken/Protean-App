@@ -182,6 +182,18 @@ export const backChainExt: SectorExtension = {
       estMonths: [4, 10],
       description: "3×3 controlled drop-backs from standing to a floor bridge (spot or a stack of mats for the first sessions). Half of the stand-to-stand, trained on its own.",
     }),
+
+    // ------------------------------------ conditioning slots (upper back)
+    // full-08 (face pulls) credited nothing at any step. Ids are the canonical
+    // exercise ids, so logged sets auto-feed the tree.
+    node("pull.face_pull_bw", "Bodyweight Face Pull", S, -2.9, reps(15, 3), ["hinge_ramp.superman_hold"], {
+      evidence: "D",
+      description: "3×15 from a bar or rings set high, pulling to the forehead with the elbows above the wrists. Seed exercise (full-08).",
+    }),
+    node("pull.face_pull_band", "Band Face Pull", S, -2.7, reps(20, 3), ["pull.face_pull_bw"], {
+      evidence: "D",
+      description: "3×20 with a band anchored at head height. Seed exercise (full-08). External rotation under low load — the direct counterweight to the pressing and straight-arm volume elsewhere in the week.",
+    }),
   ],
 
   // Splice the new work beneath the shipped hubs so the easier nodes actually gate them.

@@ -15,7 +15,7 @@ export default function App() {
   const [tab, setTab] = useState<Tab>("today");
   const [activeDay, setActiveDay] = useState<DayId | null>(null);
 
-  if (store.data.athletes.length === 0) {
+  if (!store.data.athlete) {
     return (
       <Onboarding
         onDone={(d) => {

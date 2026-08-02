@@ -194,7 +194,9 @@ export default function Stunts() {
               <div className="text-sm text-ink-1">{criterionText(sel, athlete.sex)}</div>
               {sel.sa && (
                 <p className="text-xs text-ink-2 mt-1.5">
-                  ⚠️ Straight-arm work — tendons adapt on a ~12-week clock. Advance max one step per 3 weeks.
+                  Straight-arm work. Tendon collagen remodels on a ~12-week clock — far slower than
+                  muscle — so this line is where elbows get hurt. Roughly one step per 3 weeks is the
+                  pace the research supports. Advice, not a lock.
                 </p>
               )}
               {(sel.surface || sel.spotterRequired) && (

@@ -245,6 +245,82 @@ export const pullLeversExt: SectorExtension = {
       description:
         "3×3 per side at a 10 s descent (doc 01 §3.8 asks 5–8 s). Own the slower eccentric before spending months on band-assisted attempts.",
     }),
+
+    // -------------------------------------- conditioning slots (pull + full)
+    // Nodes for routine exercises that previously credited nothing. Ids are the
+    // canonical exercise ids, so logged sets auto-feed the tree. pull-07/full-06
+    // (the curl chain) and pull-09 (the quasi-iso chain) previously credited
+    // nothing at ANY step — they were two of the six dead slots.
+    node("pull.scap_row_band", "Band Scapula Row", S, -2.3, reps(15, 2), ["pull.band_pull"], {
+      evidence: "D",
+      description: "2×15 retracting the shoulder blades against a band, arms straight. Seed exercise (pull-04, band 2).",
+    }),
+    node("qi.band_row", "Quasi-Iso Band Row", S, -2.1, hold(60), ["pull.scap_row_band"], {
+      evidence: "D",
+      description: "One 60 s hold at the mid-range against a band. Seed exercise (pull-09, band 2).",
+    }),
+    node("qi.row", "Quasi-Iso BW Row", S, -1.8, hold(60), ["pull.row_bodyweight"], {
+      evidence: "D",
+      description: "One 60 s hold at the top of a bodyweight row. Seed exercise (pull-09, band 1).",
+    }),
+    node("pull.wall_climb", "Wall Climb", S, -1.7, reps(5, 3), ["pull.row_bodyweight"], {
+      evidence: "D",
+      description: "Walk the feet up a wall while the hands walk in toward it — 3×5. Seed exercise (pull-01, band 2).",
+    }),
+    node("core.reverse_plank_leg_raise", "Reverse Plank w/ Leg Raise", S, -1.9, reps(10, 3, true), ["core.plank_30s"], {
+      evidence: "D",
+      description: "From a reverse plank, lift one leg and lower it under control — 3×10 per side. Seed exercise (pull-02). Posterior-chain counterpart to the front plank.",
+    }),
+    node("pull.kipping_pullup", "Kipping Pull-Up", S, -0.9, reps(10, 3), ["pull_base.pullup1"], {
+      evidence: "D",
+      description: "3×10. Seed exercise (pull-05, band 2). A conditioning variation, not a strength one — the hip drive is doing work the lats otherwise would, so it never substitutes for a strict rep.",
+    }),
+    node("qi.pullup", "Quasi-Iso Pull-Up", S, -0.4, hold(60), ["pull_base.pullup5"], {
+      evidence: "D",
+      description: "One 60 s hold at the top of a pull-up. Seed exercise (pull-09, band 0) and the hardest rung of that chain.",
+    }),
+    node("pull.explosive_pullup_weighted", "Explosive Pull-Up +kg", S, 2.2, reps(5, 3), [
+      "muscle_up_bar.explosive_pullup",
+    ], {
+      evidence: "C",
+      description: "3×5 explosive pull-ups with added load. Seed exercise (pull-05, band 0) and the hardest rung of that chain.",
+    }),
+
+    // ------------------------------------------------------------ curl line
+    // pull-07 and full-06 are five curl variations that credited nothing. They
+    // are a real elbow-flexor progression, and they terminate in a recognised
+    // strength stunt, so they get a line rather than five loose nodes.
+    node("pull.curl", "Curl", S, -1.6, reps(12, 2), ["pull.band_pull"], {
+      evidence: "D",
+      description: "2×12 supinated dumbbell or barbell curls. Seed exercise (pull-07, band 0).",
+    }),
+    node("pull.hammer_curl", "Hammer Curl", S, -1.4, reps(12, 2), ["pull.curl"], {
+      evidence: "D",
+      description: "2×12 neutral-grip. Seed exercise (pull-07, band 1). Biases brachialis and brachioradialis, which is what carries over to thick-grip and towel hangs.",
+    }),
+    node("pull.overhand_curl", "Overhand Curl", S, -1.2, reps(12, 2), ["pull.curl"], {
+      evidence: "D",
+      description: "2×12 pronated (reverse) curls. Seed exercise (full-06).",
+    }),
+    node("pull.drag_curl", "Drag Curl", S, -1, reps(12, 2), ["pull.hammer_curl"], {
+      evidence: "D",
+      description: "2×12 keeping the bar in contact with the torso so the elbows travel back. Seed exercise (pull-07, band 1).",
+    }),
+    node("pull.cheat_curl", "Cheat Curl", S, -0.8, reps(12, 2), ["pull.drag_curl"], {
+      evidence: "D",
+      description: "2×12 using a hip drive to pass the sticking point, then a controlled eccentric. Seed exercise (pull-07, band 2) — an overload tool for the lowering phase, not a way to move more weight.",
+    }),
+    node("curl.strict_25pct", "Strict Curl 25% BW", S, -0.2, wreps(5, 0.25, 3), ["pull.cheat_curl"], {
+      evidence: "D",
+      description: "3×5 with the back against a wall or post — no hip drive, no lean. The strict standard is what makes the ratio mean anything.",
+    }),
+    node("curl.strict_half_bw", "½-Bodyweight Strict Curl", S, 1, wreps(1, 0.5), ["curl.strict_25pct"], {
+      isStunt: true,
+      evidence: "D",
+      estMonths: [12, 30],
+      description:
+        "One strict barbell curl at half bodyweight, back flat against a wall. A long-standing gym benchmark and the only stunt here that isolates a single joint. ♀ criterion 0.35×BW.",
+    }),
   ],
 
   // Splice the new easier work underneath the already-authored hubs. Every id on the

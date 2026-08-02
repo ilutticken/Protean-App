@@ -27,7 +27,7 @@
 // isStunt node swim.3800m still traces back to a ring-0 ancestor after normalization).
 
 import type { SectorExtension } from "../skill-helpers";
-import { ATTESTED, distanceOf, node, reps } from "../skill-helpers";
+import { ATTESTED, distanceOf, node, reps, wreps } from "../skill-helpers";
 
 const S = "run_martial" as const;
 
@@ -163,6 +163,40 @@ export const runMartialExt: SectorExtension = {
     }),
     node("power.man_maker", "Man Maker ×10", S, -2, reps(10), ["power.devil_press"], {
       description: "10 unbroken man makers (push-up, two renegade rows, clean to overhead). Seed full-03 band 0 target — the sector's loaded-conditioning capstone.",
+    }),
+
+    // ------------------------------------- conditioning slots (loaded + rope)
+    // Nodes for routine exercises that previously credited nothing. Ids are the
+    // canonical exercise ids, so logged sets auto-feed the tree.
+    //
+    // cond.sandbag_tug_crawl sits here rather than in `balance`, where the
+    // catalog files it (push-08 is a balance slot): every balance node is
+    // attestation-only by locked decision #10, and a loaded crawl should credit
+    // from a logged set. crossref.test.ts carries the documented exception.
+    node("cond.sandbag_tug_crawl", "Sandbag Tug Crawl", S, -2.9, reps(20, 2), ["carry.bilateral_carry"], {
+      evidence: "D",
+      description: "Crawl forward dragging a sandbag behind you — 2×20 steps (push-08 counts steps; band-0 target is 20).",
+    }),
+    node("power.db_runner", "Dumbbell Runner", S, -2.8, reps(20, 3), ["carry.briefcase_carry"], {
+      evidence: "D",
+      description: "Alternating dumbbell drive in a running arm action — 3×20. Seed exercise (full-05).",
+    }),
+    node("carry.sandbag_bw", "BW Sandbag Carry", S, 0.2, wreps(100, 1), [
+      "cond.sandbag_tug_crawl",
+      "carry.briefcase_100up",
+    ], {
+      isStunt: true,
+      evidence: "D",
+      estMonths: [8, 18],
+      description:
+        "100 unbroken steps carrying a sandbag of your own bodyweight — push-08's top tier, at 1.0×BW. ♀ criterion 0.75×BW. Grip and trunk fail long before the legs do, which is what makes it a carry stunt rather than a leg one.",
+    }),
+    node("skip.double_under_100", "Double-Unders ×100", S, 1, reps(100), ["skip.double_under_50"], {
+      isStunt: true,
+      evidence: "D",
+      estMonths: [6, 15],
+      description:
+        "100 consecutive double-unders, no trips. Almost entirely a timing and calf-endurance problem rather than a strength one — the honest conditioning capstone of the rope line.",
     }),
   ],
 

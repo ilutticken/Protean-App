@@ -125,6 +125,14 @@ export const femaleBwRatioOverride: Record<string, number> = {
   // introduced: bench/OHP/pull ×0.70, squat ×0.72, deadlift ×0.78, power ×0.80 (doc 01 §4.1/§6).
   "barbell_bench.0_5xbw": 0.35, // ×0.70, cf. 0_75xbw 0.525 / 1_0xbw 0.75
   "barbell_ohp.0_35xbw": 0.245, // ×0.70, cf. 0_5xbw 0.35 / 1_0xbw 0.70
+
+  // --- Curl line (skills-ext/pull_levers.ts) ---------------------------------------------
+  // ×0.70, the same upper-body multiplier as bench / OHP / weighted pull-up above.
+  "curl.strict_25pct": 0.175,
+  "curl.strict_half_bw": 0.35,
+
+  // --- Loaded carry stunt (skills-ext/run_martial.ts) ------------------------------------
+  "carry.sandbag_bw": 0.75,
   "barbell_squat.0_75xbw": 0.54, // ×0.72, cf. 1_0xbw 0.72 — without this ♀ 0.75x gates ABOVE ♀ 1.0x
   "barbell_deadlift.1_0xbw": 0.78, // ×0.78, cf. 1_5xbw 1.17 / 2_0xbw 1.5
   "barbell_deadlift.1_25xbw": 0.975,
@@ -179,6 +187,9 @@ const nodeList: SkillNode[] = [
   }),
   node("barbell_bench.2_0xbw", "Bench Press 2.0×BW", "pushup", 3, e1rmRatio("bench", 2.0), ["barbell_bench.1_5xbw"], {
     evidence: "B",
+    isStunt: true,
+    estMonths: [24, 60],
+    description: "Double-bodyweight bench — advanced/elite on the StrengthLevel tables. ♀ criterion 1.4×BW.",
   }),
 
   // -------------------------------------------------------- dips_planche_hs
@@ -298,7 +309,9 @@ const nodeList: SkillNode[] = [
     description: "3×10 s support at muscle-up-top depth; local bridge from the dip line to the ring MU (addendum-2 §4).",
   }),
   node("dip.weighted_half_bw", "Weighted Dip ½ BW", "dips_planche_hs", 3, wreps(1, 0.5), ["dip.dip_weighted"], {
-    description: "♂ +50% / ♀ +35% BW ×1 (doc 01 §4.1).",
+    isStunt: true,
+    estMonths: [12, 30],
+    description: "♂ +50% / ♀ +35% BW ×1 (doc 01 §4.1). The vertical-push weighted-calisthenics benchmark.",
   }),
   // Maltese line — addendum-1 §2.3; all sa.
   node("maltese.lean", "Maltese Lean", "dips_planche_hs", 12, hold(10, 4), [
@@ -345,7 +358,11 @@ const nodeList: SkillNode[] = [
   ], { description: "3–5 reps @ +25% BW — sensible entry to the OAP branch." }),
   node("one_arm_pullup.wpu_50pct", "Weighted Pull-Up +50% BW", "pull_levers", 2, wreps(1, 0.5), [
     "one_arm_pullup.wpu_25pct",
-  ], { description: "1 rep @ +50% BW (♀ +35%, doc 01 §4.1) — the halfway-loaded OAP checkpoint." }),
+  ], {
+    isStunt: true,
+    estMonths: [12, 30],
+    description: "1 rep @ +50% BW (♀ +35%, doc 01 §4.1) — the vertical-pull weighted-calisthenics benchmark, and the halfway-loaded OAP checkpoint.",
+  }),
   node("one_arm_pullup.archer_pullup", "Archer Pull-Up", "pull_levers", 3, reps(5, 3, true), [
     "one_arm_pullup.wpu_50pct",
   ]),
@@ -634,6 +651,9 @@ const nodeList: SkillNode[] = [
   ], { evidence: "B", isStunt: true, estMonths: [6, 24], description: "♀ criterion 1.5×BW (doc 01 §4.1)." }),
   node("barbell_squat.2_5xbw", "Back Squat 2.5×BW", "squat", 3, e1rmRatio("squat", 2.5), ["barbell_squat.2_0xbw"], {
     evidence: "B",
+    isStunt: true,
+    estMonths: [24, 60],
+    description: "The squat counterpart to the 3×BW deadlift — advanced/elite on the StrengthLevel tables. ♀ criterion 1.8×BW.",
   }),
 
   // -------------------------------------------------------------------- core

@@ -115,28 +115,23 @@ export default function Today({ onStart }: { onStart: (day: DayId) => void }) {
         </p>
       </section>
 
-      {/* shared PR feed */}
+      {/* PR feed */}
       <section className="rounded-2xl bg-surface-1 border border-line p-4">
-        <div className="font-semibold text-sm mb-2">Recent PRs — both of you</div>
+        <div className="font-semibold text-sm mb-2">Recent PRs</div>
         {prs.length === 0 ? (
           <p className="text-ink-3 text-sm">PRs will show up here as you log sessions.</p>
         ) : (
           <div className="flex flex-col gap-1.5">
-            {prs.map((p, i) => {
-              const a = data.athletes.find((x) => x.id === p.athleteId);
-              return (
-                <div key={i} className="flex items-center gap-2.5 text-sm">
-                  <span
-                    className="w-5 h-5 rounded-full grid place-items-center text-[10px] font-bold text-surface-0 shrink-0"
-                    style={{ background: a?.accent ?? "var(--color-ink-3)" }}
-                  >
-                    {a?.name.slice(0, 1).toUpperCase()}
-                  </span>
-                  <span className="text-ink-1 truncate">{p.label}</span>
-                  <span className="text-ink-3 text-xs ml-auto shrink-0 nums">{p.date.slice(5)}</span>
-                </div>
-              );
-            })}
+            {prs.map((p, i) => (
+              <div key={i} className="flex items-center gap-2.5 text-sm">
+                <span
+                  className="w-1.5 h-1.5 rounded-full shrink-0"
+                  style={{ background: athlete.accent }}
+                />
+                <span className="text-ink-1 truncate">{p.label}</span>
+                <span className="text-ink-3 text-xs ml-auto shrink-0 nums">{p.date.slice(5)}</span>
+              </div>
+            ))}
           </div>
         )}
       </section>

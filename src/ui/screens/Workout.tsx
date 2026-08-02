@@ -4,6 +4,7 @@ import { seedPlan } from "../../data/seed-plan";
 import { exercises } from "../../data/exercises";
 import { useApp, updateAthleteState } from "../../lib/useAppData";
 import { applySession, ghost, restSuggestion, targetFor, type ProgressionEvent } from "../../lib/progression";
+import { resolveSlotState, stampSlotState } from "../../lib/slot-identity";
 import { athleteSessions, slotById } from "../../lib/selectors";
 import { SECTORS } from "../sectors";
 import RestTimer from "../components/RestTimer";
@@ -49,7 +50,9 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
   const [draft, setDraft] = useState<Record<string, SlotDraft>>(() => {
     const d: Record<string, SlotDraft> = {};
     for (const s of slots) {
-      const st = athleteState.slotState[s.id];
+      // resolveSlotState re-points a stored position at the CURRENT chain, so
+      // adding a rung to a chain can't reassign an athlete mid-progression.
+      const st = resolveSlotState(s, athleteState.slotState[s.id]);
       d[s.id] = {
         stepIndex: st?.stepIndex ?? s.chain.length - 1, // start at easiest
         optIndex: st?.optIndex ?? 0,
@@ -67,6 +70,18 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
   const [summary, setSummary] = useState<{ events: ProgressionEvent[]; setCount: number } | null>(null);
   const [holdTimer, setHoldTimer] = useState<{ slotId: string; setIx: number; sec: number } | null>(null);
 
+  // Straight-arm pacing: in "advisory" mode the 21-day rate limit becomes 0 days, so
+  // applySession still emits the warning path but never blocks an advance. The seed
+  // config itself stays at addendum-2 §1.3's 21 days — this is a display-time override,
+  // not an edit to the plan. See PLAN.md "Tendon pacing".
+  const config = useMemo(
+    () =>
+      data.settings.tendonPacing === "guided"
+        ? seedPlan.config
+        : { ...seedPlan.config, saStepRateLimitDays: 0 },
+    [data.settings.tendonPacing],
+  );
+
   const isoPattern = seedPlan.iso.patternByDay[dayId];
   const isoAngles = isoPattern ? seedPlan.iso.anglePresetsDeg[isoPattern] : undefined;
 
@@ -81,8 +96,11 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
       sets[setIx] = { value, ...(weightKg !== undefined && weightKg > 0 ? { weightKg } : {}) };
       return { ...prev, [slot.id]: { ...d, sets } };
     });
-    const st = athleteState.slotState[slot.id] ?? { stepIndex: draft[slot.id].stepIndex, confirmCount: 0 };
-    setRest(restSuggestion(slot, targetFor(slot, { ...st, stepIndex: draft[slot.id].stepIndex }).repBand, seedPlan.config));
+    const st = resolveSlotState(slot, athleteState.slotState[slot.id]) ?? {
+      stepIndex: draft[slot.id].stepIndex,
+      confirmCount: 0,
+    };
+    setRest(restSuggestion(slot, targetFor(slot, { ...st, stepIndex: draft[slot.id].stepIndex }).repBand, config));
     setRestNonce((n) => n + 1); // remount the timer even when the suggestion is unchanged
   }
 
@@ -110,7 +128,7 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
       entries.push(entry);
       setCount += done.length;
 
-      const prevState = athleteState.slotState[slot.id] ?? {
+      const prevState = resolveSlotState(slot, athleteState.slotState[slot.id]) ?? {
         stepIndex: d.stepIndex,
         confirmCount: 0,
       };
@@ -123,11 +141,14 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
         optIndex: d.optIndex,
         confirmCount: d.stepIndex === prevState.stepIndex ? prevState.confirmCount : 0,
       };
-      const { state: nextState, events } = applySession(slot, evalState, entry, seedPlan.config, date);
+      const { state: nextState, events } = applySession(slot, evalState, entry, config, date);
       allEvents.push(...events);
+      // Stamp the step key alongside the index the engine just chose — the key
+      // is what survives a chain edit (slot-identity.ts).
+      const stamped = stampSlotState(slot, nextState);
       updateAthleteState(store, (s) => ({
         ...s,
-        slotState: { ...s.slotState, [slot.id]: nextState },
+        slotState: { ...s.slotState, [slot.id]: stamped },
       }));
     }
 

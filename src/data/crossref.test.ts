@@ -179,6 +179,16 @@ describe("cross-reference: skill tree <-> seed exercise-id overlap (addendum-2 �
       // slot); the tree's bridge LINE lives in back_chain per doc 04 §1.2 (as does the
       // catalog's own bridge.full_bridge, which comes from mob-10 and has no slot sector).
       "bridge.glute_bridge": "slot sector (posterior) vs doc-04 bridge line sector (back_chain)",
+      // full-04 and push-08 are balance SLOTS, so the catalog files their exercises under
+      // balance — but locked decision #10 makes every balance node attestation-only, since
+      // that sector is acrobatics. Rotational bag/plate work and a loaded crawl are not
+      // acrobatics and must credit automatically from a logged set, so the tree files them
+      // by movement instead: rotation -> core, loaded locomotion -> run_martial.
+      "power.halo": "slot sector (balance) vs rotational core line (core)",
+      "power.kb_halo": "slot sector (balance) vs rotational core line (core)",
+      "power.gama_cast": "slot sector (balance) vs rotational core line (core)",
+      "power.bulgarian_bag_spin": "slot sector (balance) vs rotational core line (core)",
+      "cond.sandbag_tug_crawl": "slot sector (balance) vs loaded-carry line (run_martial)",
     };
     const mismatches: string[] = [];
     for (const id in skills) {

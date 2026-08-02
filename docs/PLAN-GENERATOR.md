@@ -1,7 +1,11 @@
 # PLAN-GENERATOR — "Train toward a stunt"
 
-Scoping document. Status: **proposal, nothing implemented**. Author date 2026-08-01.
-Read alongside `docs/PLAN.md` (13 locked decisions — none may be violated by anything below).
+Scoping document. Author date 2026-08-01; **§9 answered and locked 2026-08-02**.
+Read alongside `docs/PLAN.md` (14 locked decisions — none may be violated by anything below).
+
+Status: **proposal**, except for two prerequisites already shipped — the single-athlete collapse
+(§9.4) and the additive-progress guarantee (§9.5). Read **§9 first**: it supersedes the assumptions
+§3–§6 were written under, most importantly the dropped "verbatim mode" toggle.
 
 ---
 
@@ -19,7 +23,7 @@ Ship these three numbers on Stats and treat them as acceptance criteria:
 
 | Metric | Definition | Today | Target |
 |---|---|---|---|
-| **Credited-set rate** | % of logged sets whose `EntryLog.exerciseId` credits ≥1 tree node | ~71% (42/144 plan exercises credit nothing) | ≥95% |
+| **Credited-set rate** | % of logged sets whose `EntryLog.exerciseId` credits ≥1 tree node | **100%** (was ~71%; the 42 orphans were noded in §9.6) | ≥95% ✅ |
 | **Goal-relevant set rate** | % of logged sets crediting a node on the *active target's* prerequisite closure | 0% (no goal exists) | ≥40% of weekly hard sets |
 | **Frontier motion** | nodes moved `available`→`in-progress`→`achieved` per 4-week block on the active path | n/a | ≥2 |
 
@@ -30,6 +34,12 @@ band targets and R-rules), auto-programming acrobatics, or building a periodizat
 ---
 
 ## 2. Current-state analysis
+
+> **Stale as of 2026-08-02 — kept as the audit that motivated the work.** §2.2/§2.3/§2.4 describe
+> the tree *before* the conditioning pass in §9.6. Current numbers: **557 nodes** (was 501),
+> **168 auto-marked** (was 126), **0 routine exercises crediting nothing** (was 42), **0 slots dead
+> at every step** (was 6), **30 stunts** (was 21). §2.5's four structural causes still hold, and
+> cause 4 (the locomotion producer, 41 nodes) is still open — see §9.8.
 
 ### 2.1 How Plan and Tree touch today
 
@@ -488,27 +498,202 @@ fixed routine cannot serve.)*
 
 ---
 
-## 9. Open questions for the user
+## 9. Answers — locked 2026-08-02
 
-1. **Replace or coexist?** Does a goal-driven plan *replace* the Protean Routine, or ride on top of
-   it as assumed here (5-day skeleton intact, ≤2 added slots, one-tap revert)? If the routine is
-   negotiable, the accessory budget can be far larger.
-2. **PDF fidelity.** Must `seed-plan.ts` stay the verbatim default forever (it is pinned by
-   `seed-plan.test.ts` and `seedMeta.source`)? If yes, all adaptation must be overlay-only — the
-   assumption §4 is built on.
-3. **One goal per athlete, or one shared?** Separate goals are trivial (`AthleteState` is already
-   per-athlete); a shared "we're both chasing the front lever" needs a new top-level field.
-4. **Volume reallocation budget.** (a) 0% — bias chain steps only; (b) ≤2 added slots, no removals
-   (net volume +~6%); (c) ≤2 added slots with equal removals (net flat). This doc assumes (c).
-5. **The 42 orphan exercises.** For `full-04` (bag spins/halos), `full-05` (dumbbell runner),
-   `pull-07`/`full-06` (five curls), `full-08` (face pulls): invent tree nodes so they credit
-   something, or leave them as honest conditioning that credits nothing?
-6. **Which stunts actually matter?** Of the 21 `isStunt` nodes, which 2–4 are real ambitions?
-   Phase 2's authoring order should follow that answer, not node count.
-7. **Barbell access.** Four stunts are pure `e1rm-ratio` and 21 nodes need the quick lift-log. Is
-   there a barbell? If not, those nodes should be visibly *deferred*, not permanently `locked`.
-8. **Tendon-block consent.** For `sa` targets this mandates a 12-week tendon block before elite
-   nodes unlock. Hard gate, or advisory with an override?
+### 9.1 Sacred structure, negotiable configuration *(supersedes Q1 + Q2)*
+
+> *"The style and structure of the PDF routine should be sacred, but not the exact workout
+> configuration."*
+
+**Invariant** — the generator may never change any of it:
+
+- the 5-day week and its identity (Legs / Pull / Push / Full Body / Mobility) and `weekOrder`;
+- the slot count per day, and each slot's `sector`, `sets`, `type`, and `tiers`;
+- the warm-up → iso-overcoming → work → mobility scaffolding;
+- hardest-first chains, the 0/1/2 rep-band model, and the R-rule engine in `progression.ts`.
+
+**Negotiable** — the generator's entire lever set:
+
+- *which exercise* occupies a chain rung (substitution within the slot's sector and pattern);
+- *which rung* is prescribed (chain-step biasing);
+- which of ≤2 accessory slots fill the reallocated budget in §9.3.
+
+This is a stronger mandate than §3's Option B assumed. Option B was written around "seed renders
+verbatim by default, adaptation is an overlay you can switch off"; the answer instead makes
+adaptation the *default* behaviour of a structurally-fixed week. Consequences:
+
+- The global "verbatim mode" toggle in §6 is **dropped**. It has no constituency — the structure it
+  would protect is already protected by the invariant list.
+- Per-slot transparency replaces it: every substituted slot shows *why this exercise* and offers a
+  one-tap **restore the seed exercise** for that slot alone.
+- `seed-plan.ts` remains the pinned, verbatim transcription of the PDF and `seed-plan.test.ts`
+  keeps asserting it. It is now the *substrate* the generator reads, not the thing rendered.
+
+### 9.2 The six goal stunts *(answers Q6)*
+
+> *"Pick 6 stunts that represent different modalities, at an effort level of the one arm push up.
+> Include a hinge stunt."*
+
+Calibrated to `one_arm_pushup.oap` (`estMonths` 6–12) and spread across pattern and plane. These
+six drive Phase 2's authoring order:
+
+| # | Stunt | Node id | Sector | Modality | est. months |
+|---|---|---|---|---|---|
+| 1 | One-Arm Push-Up | `one_arm_pushup.oap` | pushup | Horizontal push, unilateral | 6–12 |
+| 2 | Full Front Lever | `front_lever.full` | pull_levers | Horizontal pull, straight-arm | 6–18 |
+| 3 | Full Human Flag | `human_flag.full` | pull_levers | **Frontal plane**, lateral chain | 6–12 |
+| 4 | Freestanding HSPU | `hspu.free_hspu` | dips_planche_hs | Vertical push, inverted | 8–18 |
+| 5 | Double-Bodyweight Deadlift | `barbell_deadlift.2_0xbw` | posterior | **Hinge**, barbell | 6–18 |
+| 6 | Pistol Squat +50% BW | `pistol_squat.pistol_half_bw` | squat | Knee-dominant, unilateral, loaded | — |
+
+Why these and not the others:
+
+- **Difficulty band.** The other 15 stunts sit outside it. Too hard: iron cross (12–36), full
+  planche (18–36), one-arm pull-up (24–36), one-arm handstand (24–36), maltese (24–60), manna
+  (24–48). Too easy *and* attested-only, so nothing to program toward: standing back tuck and front
+  tuck (2–6). Different training system entirely: marathon, 3.8 km swim.
+- **Human Flag is the only frontal-plane stunt in the whole tree.** Everything else is sagittal.
+  Dropping it would leave the app's "different planes and domains" claim unbacked at the top end.
+- **Deadlift 2.0×BW is the hinge**, as requested — and it is already the best-supported goal in the
+  app: `posterior` needs only 7 prerequisite levels, all `e1rm-ratio`, all creditable *today* via
+  the quick lift-log. It is the one goal that can ship in Phase 1 with no new mapping work.
+- **Pistol +50% BW is the least calibrated of the six** (`estMonths` is unset; the tree places it at
+  depth 12). It is included because bodyweight unilateral squatting is otherwise unrepresented once
+  the hinge takes the barbell lower-body slot. If it proves badly mis-tiered against the OAP anchor,
+  swap it for Double-Bodyweight Squat (`barbell_squat.2_0xbw`, 6–24).
+
+Scheduling note: goals 2 and 3 both live in `pull_levers`, so they compete for Pull-day slots. The
+`MAX_GOAL_SLOTS = 2` cap in §4.4 must be enforced *per day*, not per week, or Pull day absorbs both.
+
+### 9.3 Volume budget: net flat *(answers Q4)*
+
+> *"I'd go with whichever science says is the best."*
+
+**Locked: option (c) — chain-step biasing is free, accessory slots are added only against equal
+removals, net weekly volume unchanged.** The reasoning, in the order it matters:
+
+1. **Specificity beats accumulation for a skill/strength target.** The six goals are limited by
+   pattern-specific force production and tendon adaptation, not by systemic muscle volume.
+   Redirecting existing sets at the target pattern is the intervention; adding sets is not.
+2. **The seed week is already inside the productive dose band.** Weekly hard-set volume per muscle
+   group is the dominant hypertrophy dose variable, but the response flattens and fatigue cost
+   climbs beyond roughly 10–20 hard sets per muscle per week — where the Protean week already sits.
+   Adding on top spends recovery for a shrinking return.
+3. **Recovery is the shared resource the goals compete for.** Five of six goals load the same
+   shoulder girdle and elbows. §7's straight-arm guardrails (21-day rate limit, tendon block) are
+   themselves volume-management rules; a generator that inflated volume would be fighting them.
+4. **Net-flat is the only option that stays falsifiable.** With volume held constant, a goal that
+   fails to progress falsifies the *biasing*, not the dose.
+
+Biasing costs no volume at all and is therefore unrestricted — it changes which rung is prescribed,
+never how many sets are performed.
+
+### 9.4 Single athlete *(supersedes Q3)*
+
+> *"Since the data is going to be stored locally, please get rid of the second athlete."*
+
+**Done — shipped ahead of this document** (schema v2). Storage is local-first, so two people run two
+independent installs. `GoalState` therefore lives in `AthleteState`; there is no shared-goal field
+and no cross-athlete attribution risk. The corresponding row in §10's risk table is retired.
+
+The v1 → v2 migration **archives** the non-active athlete instead of dropping them (`AppData.archived`),
+so upgrading an existing two-athlete install cannot destroy a partner's history — it still exports,
+and can be imported into their own install.
+
+### 9.5 Additive-by-construction *(new constraint)*
+
+> *"Please code things such that new exercises can be coded without erasing previous progress."*
+
+Promoted to a **locked decision** (PLAN.md #14) and implemented ahead of this document. The hazard
+was real and specific: `SlotState.stepIndex` was a bare position in `slot.chain`, so authoring a new
+rung — exactly what Phase 2 does 245 times — would have silently re-pointed every stored position
+at a different exercise, confirm counts intact.
+
+`src/lib/slot-identity.ts` makes the *key* the progress and the index a cache: `stampSlotState` on
+every write, `resolveSlotState` on every read. Phase 2 may now add rungs freely. See PLAN.md #14 for
+the full invariant list and what each derived store relies on.
+
+### 9.6 The 42 conditioning exercises — all noded *(answers Q5, shipped)*
+
+> *"The 42 conditioners should be included. I'd consider certain conditioning exercises stunts
+> under certain variations."*
+
+Overrides the earlier "leave them unmapped" recommendation. All 42 now have skill nodes, authored
+into their sector's `skills-ext/` file under a `conditioning slots` heading. **Every one of the 144
+routine exercises now credits a node, and no slot credits zero at every step** — the six dead slots
+(`pull-07`, `pull-09`, `full-04`, `full-05`, `full-06`, `full-08`) are gone.
+
+Node ids are the canonical exercise ids, so a logged set auto-feeds the tree with no alias. Where a
+slot counts *steps* (`legs-05` backward walk/jog, `push-08` sandbag crawl), the criterion is a step
+count matching the slot's own band target rather than a distance — a distance criterion would have
+been unreachable, since nothing produces `locomotionBest` yet (§9.8).
+
+Four conditioners get a stunt-grade variation, per the "stunts under certain variations" ask:
+
+| Stunt | Line | Criterion |
+|---|---|---|
+| 1-Arm LaLanne Push-Up | `core.lalanne_pushup_one_arm` | 3×3/side — already the hardest rung of `push-04` |
+| ½-Bodyweight Strict Curl | `curl.strict_half_bw` | 1 rep @ 0.5×BW (♀ 0.35) — new tip on the `pull-07` curl chain |
+| Double-Unders ×100 | `skip.double_under_100` | 100 unbroken |
+| BW Sandbag Carry | `carry.sandbag_bw` | 100 steps @ 1.0×BW (♀ 0.75) — `push-08`'s top tier, loaded |
+
+Two of these are deliberately NOT aliased to a catalog exercise, and `skill-exercise-alias.ts`
+records why: a double-under is a different movement from a single skip (the alias test's `FORBIDDEN`
+list already pinned this), and "strict" is a technique constraint a curl log cannot attest to when
+the same chain contains a cheat curl. Both are marked from the Stunts screen instead.
+
+Four rotational conditioners plus the sandbag crawl are filed in `core` / `run_martial` rather than
+`balance`, where the exercise catalog puts them: the catalog gives an exercise its *slot's* sector,
+but every `balance` node is attestation-only by locked decision #10. Rotation and loaded crawling
+are not acrobatics and must credit automatically. `crossref.test.ts` carries the exception.
+
+### 9.7 Barbell access — confirmed *(answers Q7)*
+
+> *"We have barbell access, and powerlifts/weighted calisthenics should be represented in the stunts."*
+
+No deferred-state UI is needed; the 21 `e1rm-ratio` nodes and 5 lift-log nodes are live. The stunt
+roster went from 21 to 30, adding the weighted-calisthenics tier that was missing entirely:
+
+- **Weighted calisthenics** (new): Weighted Pull-Up +50% BW, Weighted Dip ½ BW.
+- **Powerlifts** (new): Bench Press 2.0×BW, Back Squat 2.5×BW — pairing the squat line with the
+  deadlift's existing 2.0/3.0 pair.
+- **Conditioning** (new): the four in §9.6.
+- **Box jump** (new line, §9.9).
+
+### 9.8 Still open — neither blocks Phase 1
+
+- **The locomotion producer.** 41 `time`/`distance` nodes still cannot auto-credit because
+  `selectors.skillStatuses()` never passes `locomotionBest`. This is the single largest remaining
+  auto-credit win and is Phase 1 work in §8; nothing above depends on it.
+- **Tendon-block consent — answered, and the answer removes a §7 guardrail.** See §9.10.
+
+### 9.9 Box jump line *(new, athlete-requested)*
+
+`box_jump.*` in the `squat` sector, 10 rungs from a knee-high step-up to a 100 cm (40 in) stunt.
+The sector had scattered plyometrics (jump squat, goblet jump squat, depth jump) but no jump-height
+progression and — more importantly — no landing mechanics before the impact work, so the line opens
+with step-up → jump-and-stick and always steps *down* from the box.
+
+The stunt's description states the honest caveat: box height is not vertical jump, since a deep knee
+tuck adds height without hip displacement. The seated box jump rung (no countermovement) is the
+check that the height is real. Nothing in the routine logs a box jump, so these rungs are marked
+from the Stunts screen; the criteria are `reps` rather than `attested` so they will auto-credit
+if a box jump ever enters a slot.
+
+### 9.10 Tendon pacing: advisory, not a gate *(answers Q8)*
+
+> *"Add a light warning about tendon strength, but please do not hard-gate it."*
+
+**The 12-week tendon block in §7 is withdrawn**, and the frontier must NOT exclude elite `sa` nodes.
+Shipped alongside it: the existing 21-day straight-arm rate limit became a setting defaulting to
+`advisory` (PLAN.md "Tendon pacing"). `seedPlan.config` and `applySession` are untouched — advisory
+mode passes `saStepRateLimitDays: 0`, so the warning renders and the advance proceeds.
+
+§7's other guardrails stand. What replaces the gate is information: the Stunts sheet states the
+~12-week collagen remodelling clock and that ~1 step per 3 weeks is the supported pace, explicitly
+labelled advice; Plan → Settings explains why and restores enforcement with one tap. Goals 2 and 3
+(front lever, human flag) are both straight-arm, so this text is what the athlete will actually see
+on the path to them.
 
 ---
 
@@ -517,9 +702,10 @@ fixed routine cannot serve.)*
 | Risk | Why it could be worse than today | Mitigation |
 |---|---|---|
 | **Goal myopia** — biasing every slot toward one target hollows out the other 8 sectors | The seed week's balance was validated against doc 03 §14; a target-biased week may not be | Guardrail §7.6 (never drop a pattern) enforced as a hard assertion in `planWeek`, plus the ≤2 accessory-slot cap |
-| **Tendinopathy** — the tree's shortest path to a stunt is often straight-arm | Calisthenics injury load is 1.288/1000 h, >73% upper-limb, mean 40 days lost (doc 01 §2.1) | Guardrails §7.1–§7.4; frontier excludes elite `sa` nodes pre-tendon-block; UI states the 21-day clock rather than hiding it |
+| **Tendinopathy** — the tree's shortest path to a stunt is often straight-arm | Calisthenics injury load is 1.288/1000 h, >73% upper-limb, mean 40 days lost (doc 01 §2.1) | Guardrails §7.1–§7.4; frontier no longer excludes elite `sa` nodes — the tendon block was withdrawn (§9.10); UI states the 21-day clock rather than hiding it |
 | **Bad `node-trainers.ts` entries** unlock hard skills from easy work | A single wrong mapping silently marks a stunt achieved — worse than 25% coverage, because it is *false* | Port `skill-exercise-alias.ts`'s SAFETY RULE verbatim; test that no trainer's exercise has a lower `bwLoadFactor` than the node's own line; "when in doubt, leave unmapped" |
 | **Overpromising ETAs** | doc 03 §10 names this the main UX failure mode for planche apps ("years typical") | Show `estMonths` ranges as-is, never a countdown; path preview shows *steps remaining*, not dates |
 | **Chasing the coverage metric** | Inventing nodes so `full-04` credits something inflates §1's metrics without training anything | Open question 5 puts the call with the user; the metric is credited-set *rate*, and conditioning slots are allowed to score zero |
-| **Two athletes, one device, two overlays** | A mis-attributed set now also mis-moves a goal | The existing "reassign last set" affordance (doc 05 §5.1) must also recompute credit; accent color on the ✓ stays the guard rail |
+| ~~Two athletes, one device, two overlays~~ | Retired — the app is single-athlete as of schema v2 (§9.4) | — |
+| **New rungs shifting stored progress** | Phase 2 authors rungs into existing chains 245 times; a positional `stepIndex` would silently reassign the athlete mid-progression | Shipped: `slot-identity.ts` keys progress to the step, not the index (§9.5), covered by `slot-identity.test.ts` |
 | **Scope creep into Option C** | The generator is the fun part; the mapping table is the valuable part | Phase gates: Phase 4 may not start until Phase 2's coverage assertion (≥400/501) is green |

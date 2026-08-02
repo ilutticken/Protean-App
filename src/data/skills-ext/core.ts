@@ -170,6 +170,83 @@ export const coreExt: SectorExtension = {
       description:
         "Seated in a full pike on blocks: lift both heels off the floor and hold 2 s, 3×10. Doc 01 §3.10 is explicit that active pike compression — not strength — is the V-sit limiter, so it gets its own gate.",
     }),
+
+    // ------------------------------------------- conditioning slots (core)
+    // Nodes for routine exercises that previously credited nothing. Ids are the
+    // canonical exercise ids, so logged sets auto-feed the tree.
+    //
+    // The rotational four (halo → gama cast → bag spin) sit here rather than in
+    // `balance`, where the exercise catalog files them: the catalog gives an
+    // exercise its SLOT's sector (full-04 is a balance slot), but every balance
+    // node is attestation-only by locked decision #10 — acrobatics never
+    // auto-unlock. Rotational core work is not acrobatics and should credit
+    // automatically, so the tree files it by movement. crossref.test.ts carries
+    // the documented exception.
+    node("power.halo", "Halo", SECTOR, -1.4, reps(10, 2, true), ["core.floor_support"], {
+      evidence: "D",
+      description: "Circle a plate or light bag around the head, hips and ribs locked — 2×10 per direction. Seed exercise (full-04). Trains anti-rotation and overhead shoulder range at a load the neck and spine can tolerate.",
+    }),
+    node("power.kb_halo", "Kettlebell Halo", SECTOR, -1.15, reps(10, 2, true), ["power.halo"], {
+      evidence: "D",
+      description: "2×10 per direction with a kettlebell — the offset mass makes the same circle harder to keep honest. Seed exercise (full-04).",
+    }),
+    node("power.band_woodchopper", "Band Woodchopper", SECTOR, -1.1, reps(12, 3, true), ["core.elbow_to_knee"], {
+      evidence: "D",
+      description: "3×12 per side, high-to-low or low-to-high. Seed exercise (full-07). Rotation driven by the hips, with the spine along for the ride.",
+    }),
+    node("core.walkout_plank", "Walk-Out to Plank", SECTOR, -1.2, reps(8, 3), ["core.plank_30s"], {
+      evidence: "D",
+      description: "From standing, walk the hands out to a plank and back — 3×8. Seed exercise (push-04, band 2).",
+    }),
+    node("core.bicycle_situp", "Bicycle Sit-Up", SECTOR, -1.3, reps(20, 3), ["core.elbow_to_knee"], {
+      evidence: "D",
+      description: "20 alternating elbow-to-knee reps. Seed exercise (legs-09).",
+    }),
+    node("core.lying_leg_flutter", "Lying Leg Flutter", SECTOR, -1, hold(30, 3), ["core.lying_leg_raise"], {
+      evidence: "D",
+      description: "3×30 s of small alternating leg flutters with the low back pinned down. Seed exercise (legs-10).",
+    }),
+    node("power.medball_slam", "Medicine Ball Slam", SECTOR, -0.7, reps(10, 3), ["core.x_up"], {
+      evidence: "D",
+      description: "3×10 overhead slams. Seed exercise (full-07). One of the few places in the plan to express force fast with no eccentric to control.",
+    }),
+    node("power.sledgehammer", "Sledgehammer", SECTOR, -0.6, reps(10, 3, true), ["power.band_woodchopper"], {
+      evidence: "D",
+      description: "3×10 per side onto a tyre. Seed exercise (full-07).",
+    }),
+    node("power.gama_cast", "Gama Cast", SECTOR, -0.5, reps(8, 2, true), ["power.kb_halo"], {
+      evidence: "D",
+      description: "Bag cast around one shoulder and caught on the other — 2×8 per side. Seed exercise (full-04).",
+    }),
+    node("power.bulgarian_bag_spin", "Bulgarian Bag Spin", SECTOR, -0.3, reps(10, 2, true), ["power.gama_cast"], {
+      evidence: "D",
+      description: "2×10 spins per direction. Seed exercise (full-04) and the hardest rung of that chain — a full 360° swing of the bag around the body under control.",
+    }),
+    node("core.hanging_frog_kick_weighted", "Weighted Frog Kick", SECTOR, -0.2, reps(10, 3), [
+      "core.hanging_frog_kick",
+    ], {
+      evidence: "D",
+      description: "3×10 with a dumbbell held between the feet or an ankle weight. Seed exercise (pull-06, band 0).",
+    }),
+    node("core.lalanne_pushup", "LaLanne Push-Up", SECTOR, 0.8, reps(8, 3), [
+      "core.long_lever_plank",
+      "core.ab_rollout_knees",
+    ], {
+      sa: true,
+      evidence: "C",
+      description: "Push-up with the arms extended out in front of the shoulders — 3×8. Seed exercise (push-04, band 1). A straight-arm lever, so it loads the elbow like a rollout rather than like a push-up.",
+    }),
+    node("core.lalanne_pushup_one_arm", "1-Arm LaLanne Push-Up", SECTOR, 2, reps(3, 3, true), [
+      "core.lalanne_pushup",
+      "core.rollout_standing_part",
+    ], {
+      sa: true,
+      isStunt: true,
+      evidence: "D",
+      estMonths: [12, 30],
+      description:
+        "3×3 per side. Seed exercise (push-04, band 0) and the hardest rung of that chain. A one-arm straight-arm lever against a full-length body — closer to a one-arm rollout than to a push-up, and the most tendon-demanding thing in the conditioning slots.",
+    }),
   ],
 
   // Splice the new work beneath the existing hubs (skills.ts stays untouched).

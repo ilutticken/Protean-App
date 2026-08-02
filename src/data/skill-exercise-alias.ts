@@ -12,7 +12,13 @@
 // Deliberately unmapped: balance/attested nodes (NO_AUTO_UNLOCK), e1rm-ratio nodes (they
 // read e1rmByLift, not bestByExercise), time/distance locomotion nodes, hold nodes with no
 // hold-logged catalog source, and every assisted / partial-ROM / negative / tempo / grip
-// variant that has no catalog exercise of its own.
+// variant that has no catalog exercise of its own. Also deliberately unmapped:
+//   - double-unders (skip.double_under_*) from cond.skip — two turns per jump is a
+//     different movement, not a higher threshold of the same one (pinned in FORBIDDEN);
+//   - the strict-curl rungs (curl.strict_*) from pull.curl — "strict" is a technique
+//     constraint the log cannot attest to, and pull-07's own chain includes a cheat curl,
+//     so a logged set is not evidence the rep was strict.
+// Both are marked from the Stunts screen instead.
 
 export const skillExerciseAlias: Record<string, string> = {
   // Strict pull-up rep rungs — one movement, four thresholds; catalog pull-up is the log.
@@ -53,4 +59,5 @@ export const skillExerciseAlias: Record<string, string> = {
 
   // Jump rope volume rung — same movement as the catalog skip, 5x the reps.
   "skip.skip_500": "cond.skip",
+
 };

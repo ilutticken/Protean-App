@@ -54,8 +54,7 @@ export default function Shell({
   onTab: (t: Tab) => void;
   children: ReactNode;
 }) {
-  const { data, athlete, setActiveAthlete } = useApp();
-  const other = data.athletes.find((a) => a.id !== athlete.id);
+  const { athlete } = useApp();
 
   return (
     <div className="min-h-screen flex flex-col" style={{ ["--accent" as string]: athlete.accent }}>
@@ -67,11 +66,7 @@ export default function Shell({
           <div className="font-extrabold tracking-tight text-lg select-none">
             PROTEAN<span className="text-ink-3">⬡</span>
           </div>
-          <button
-            onClick={() => other && setActiveAthlete(other.id)}
-            title={other ? `Switch to ${other.name}` : undefined}
-            className="flex items-center gap-2 rounded-full bg-surface-1 border border-line pl-1.5 pr-3 py-1.5 active:scale-95 transition-transform"
-          >
+          <div className="flex items-center gap-2 rounded-full bg-surface-1 border border-line pl-1.5 pr-3 py-1.5">
             <span
               className="w-7 h-7 rounded-full grid place-items-center text-surface-0 font-bold text-sm"
               style={{ background: athlete.accent }}
@@ -79,12 +74,7 @@ export default function Shell({
               {athlete.name.slice(0, 1).toUpperCase()}
             </span>
             <span className="text-sm font-medium">{athlete.name}</span>
-            {other && (
-              <svg viewBox="0 0 24 24" className="w-4 h-4 text-ink-3" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M7 16l-3-3 3-3M17 8l3 3-3 3M4 13h12M20 11H8" strokeLinecap="round" strokeLinejoin="round" />
-              </svg>
-            )}
-          </button>
+          </div>
         </div>
       </header>
 

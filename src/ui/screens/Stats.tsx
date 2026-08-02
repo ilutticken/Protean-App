@@ -1,8 +1,7 @@
 import { useMemo, useState } from "react";
-import type { Athlete, TestResult } from "../../lib/types";
+import type { TestResult } from "../../lib/types";
 import { useApp, updateAthleteState } from "../../lib/useAppData";
 import {
-  athleteSessions,
   heatmapValues,
   latestTest,
   liftAggregates,
@@ -10,7 +9,7 @@ import {
   type LiftAggregate,
 } from "../../lib/selectors";
 import { radar, AXIS_LABELS, AXIS_ORDER } from "../../lib/scoring";
-import { dots, relativeStrength } from "../../lib/strength";
+import { relativeStrength } from "../../lib/strength";
 import { tests as testDefs } from "../../data/norms";
 import { STANDARDS_LEVEL_NAMES, STANDARDS_PULLED_DATE, type LiftKey } from "../../data/standards";
 import TrendChart from "../components/TrendChart";
@@ -19,7 +18,7 @@ import Heatmap from "../components/Heatmap";
 import RadarChart from "../components/RadarChart";
 import BottomSheet from "../components/BottomSheet";
 
-type StatsTab = "lifts" | "volume" | "domains" | "compare";
+type StatsTab = "lifts" | "volume" | "domains";
 
 /** Radar-fitting short labels; full names stay in the table below the chart. */
 const SHORT_AXIS: Record<string, string> = {
@@ -67,7 +66,7 @@ export default function Stats() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-1.5">
-        {(["lifts", "volume", "domains", "compare"] as StatsTab[]).map((t) => (
+        {(["lifts", "volume", "domains"] as StatsTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -88,7 +87,6 @@ export default function Stats() {
         </section>
       )}
       {tab === "domains" && <DomainsTab />}
-      {tab === "compare" && <CompareTab />}
       <p className="text-ink-3 text-[10px]">
         Standards: strengthlevel.com tables pulled {STANDARDS_PULLED_DATE}; e1RM = Brzycki/Epley hybrid, reps ≤ 10
         (11–15 shown hollow, ≥16 never estimated). Estimates, not measurements.
@@ -372,123 +370,5 @@ function TestEntrySheet({ open, onClose }: { open: boolean; onClose: () => void 
         </button>
       </div>
     </BottomSheet>
-  );
-}
-
-// ---------------------------------------------------------------------------
-
-function CompareTab() {
-  const store = useApp();
-  const { data } = store;
-  const [optIn, setOptIn] = useState(false);
-
-  if (data.athletes.length < 2)
-    return <p className="text-ink-3 text-sm">Compare needs two athletes.</p>;
-
-  if (!optIn) {
-    return (
-      <section className="rounded-2xl bg-surface-1 border border-line p-6 text-center">
-        <p className="text-ink-2 text-sm max-w-sm mx-auto">
-          Comparison is opt-in and always normalized — DOTS and %-of-own-goal, never raw kg alone.
-          The point is two people cheering the same climb, not a leaderboard.
-        </p>
-        <button
-          onClick={() => setOptIn(true)}
-          className="mt-4 rounded-xl border border-line bg-surface-2 px-5 py-2.5 text-sm font-medium"
-        >
-          Show comparison
-        </button>
-      </section>
-    );
-  }
-
-  return <CompareBody athletes={data.athletes} />;
-}
-
-function CompareBody({ athletes }: { athletes: Athlete[] }) {
-  const store = useApp();
-  const { data } = store;
-
-  const per = athletes.map((a) => {
-    const state = data.perAthlete[a.id] ?? { skillProgress: {}, slotState: {}, slotAlternatives: {} };
-    const aggs = liftAggregates(data.sessions, state, a);
-    const sbd = (["back_squat", "bench_press", "deadlift"] as const).map((k) => aggs[k]?.e1rmKg);
-    const total = sbd.every((x) => x !== undefined) ? (sbd as number[]).reduce((s, x) => s + x, 0) : undefined;
-    const radarRes = radar(radarInputFor(data, a, state));
-    return { athlete: a, aggs, total, radarRes, sessions: athleteSessions(data.sessions, a.id).length };
-  });
-
-  const axes = AXIS_ORDER.map((id) => SHORT_AXIS[id] ?? AXIS_LABELS[id]);
-
-  return (
-    <div className="flex flex-col gap-3">
-      <section className="rounded-2xl bg-surface-1 border border-line p-4">
-        <h2 className="font-semibold text-sm mb-2">Domains (each vs their own sex norms)</h2>
-        <RadarChart
-          axes={axes}
-          series={per.map((p) => ({
-            name: p.athlete.name,
-            color: p.athlete.accent,
-            values: p.radarRes.axes.map((a) => a.score),
-          }))}
-        />
-      </section>
-
-      <section className="rounded-2xl bg-surface-1 border border-line p-4">
-        <h2 className="font-semibold text-sm mb-2">Strength (normalized)</h2>
-        <table className="w-full text-sm">
-          <thead>
-            <tr className="text-ink-3 text-xs">
-              <th className="text-left font-normal py-1"> </th>
-              {per.map((p) => (
-                <th key={p.athlete.id} className="text-right font-semibold py-1" style={{ color: p.athlete.accent }}>
-                  {p.athlete.name}
-                </th>
-              ))}
-            </tr>
-          </thead>
-          <tbody className="nums">
-            <tr className="border-t border-line">
-              <td className="py-1.5 text-ink-2">DOTS (SBD total)</td>
-              {per.map((p) => (
-                <td key={p.athlete.id} className="text-right py-1.5 font-semibold">
-                  {p.total !== undefined ? Math.round(dots(p.athlete.sex, p.athlete.bodyweightKg, p.total)) : "—"}
-                </td>
-              ))}
-            </tr>
-            {(["back_squat", "bench_press", "deadlift", "ohp"] as const).map((k) => (
-              <tr key={k} className="border-t border-line">
-                <td className="py-1.5 text-ink-2">{LIFT_LABEL[k]} ×BW</td>
-                {per.map((p) => {
-                  const agg = p.aggs[k];
-                  return (
-                    <td key={p.athlete.id} className="text-right py-1.5">
-                      {agg ? (
-                        <>
-                          {relativeStrength(agg.e1rmKg, p.athlete.bodyweightKg).toFixed(2)}
-                          <span className="text-ink-3 text-xs"> ({agg.e1rmKg}kg · {agg.level.name.slice(0, 3)})</span>
-                        </>
-                      ) : (
-                        "—"
-                      )}
-                    </td>
-                  );
-                })}
-              </tr>
-            ))}
-            <tr className="border-t border-line">
-              <td className="py-1.5 text-ink-2">Sessions logged</td>
-              {per.map((p) => (
-                <td key={p.athlete.id} className="text-right py-1.5">{p.sessions}</td>
-              ))}
-            </tr>
-          </tbody>
-        </table>
-        <p className="text-ink-3 text-[11px] mt-2">
-          A 380-DOTS lifter is a 380-DOTS lifter regardless of sex or size. ×BW ratios use each
-          athlete's own sex-specific standards for level names.
-        </p>
-      </section>
-    </div>
   );
 }

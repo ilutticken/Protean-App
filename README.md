@@ -1,8 +1,11 @@
 # Protean ⬡
 
-A local-first training app for two athletes sharing one device: **The Protean Routine** as a
-progressive chain-based plan, a fast workout logger, science-backed strength estimates, and a
-hexagonal stunt skill tree (218 nodes across 9 movement families).
+A local-first training app: **The Protean Routine** as a progressive chain-based plan, a fast
+workout logger, science-backed strength estimates, and a hexagonal stunt skill tree (501 nodes
+across 9 movement families).
+
+One athlete per install — everything lives in your own browser, so partners each run their own
+copy rather than sharing one device's storage.
 
 ## Run it
 

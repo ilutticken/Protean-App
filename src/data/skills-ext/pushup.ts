@@ -182,6 +182,13 @@ export const pushupExt: SectorExtension = {
       description:
         "3×5 per side to a block under the chest — the concentric half the negative never trains. Remove one block layer at a time.",
     }),
+
+    // ------------------------------------------ conditioning slot (push-09)
+    // Id is the canonical exercise id, so logged sets auto-feed the tree.
+    node("qi.band_press", "Quasi-Iso Band Press", S, -0.2, hold(60), ["push.band_press_staggered"], {
+      evidence: "D",
+      description: "One 60 s hold at the mid-range of a band press. Seed exercise (push-09).",
+    }),
   ],
 
   // Splice the new easier work beneath the already-authored hubs. Every added prereq has a

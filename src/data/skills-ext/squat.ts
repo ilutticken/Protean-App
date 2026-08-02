@@ -181,6 +181,122 @@ export const squatExt: SectorExtension = {
       evidence: "D",
       description: "Knees travel forward, hips stay extended, torso and thighs in one line — 3×8, holding a support with one hand as needed. Isolated quad/knee-tolerance branch; build up slowly and use partial range first.",
     }),
+
+    // ------------------------------------------------------- box jump line
+    // A dedicated jump-height line. The sector already had scattered plyometrics
+    // (jump squat, goblet jump squat, depth jump) but nothing that progressed
+    // toward a measurable jump, and no landing mechanics before the impact work.
+    // Order is the standard plyometric ramp: land → jump-and-stick → low box →
+    // height → reactive → unilateral. ALWAYS step down from the box; jumping down
+    // multiplies landing force for no training benefit (doc 01 §2.1 injury load).
+    node("box_jump.step_up_knee", "Knee-High Step-Up", "squat", -2.5, reps(8, 3, true), ["squat.air_squat"], {
+      evidence: "D",
+      description: "Step up onto a knee-height box under control, no push-off from the trailing leg — 3×8 per side. Builds the single-leg strength a landing has to absorb before any jumping starts.",
+    }),
+    node("box_jump.jump_land", "Jump and Stick", "squat", -2, reps(8, 3), ["box_jump.step_up_knee"], {
+      evidence: "D",
+      description: "Small vertical jump, land in a quarter-squat and hold it silently for 2 s — 3×8. Landing is the skill; a quiet landing means the legs are absorbing force rather than the joints.",
+    }),
+    node("squat.bunny_hop", "Bunny Hop", "squat", -1.9, reps(20, 2), ["box_jump.jump_land"], {
+      evidence: "D",
+      description: "Continuous small two-footed hops, staying on the balls of the feet — 2×20. Seed exercise (legs-05), so logged sets credit this node. Low-amplitude bouncing that builds ankle stiffness.",
+    }),
+    node("box_jump.box_20", "Box Jump 20 cm", "squat", -1.5, reps(5, 3), ["box_jump.jump_land", "squat.bunny_hop"], {
+      evidence: "D",
+      description: "3×5 onto a low step, landing softly in a quarter-squat. Step back down every rep.",
+    }),
+    node("box_jump.box_40", "Box Jump 40 cm", "squat", -1, reps(5, 3), ["box_jump.box_20"], {
+      evidence: "D",
+      description: "3×5. Reset fully between reps — this is a power exercise, not conditioning.",
+    }),
+    node("box_jump.box_60", "Box Jump 60 cm", "squat", 1, reps(5, 3), ["box_jump.box_40", "squat.jump_squat"], {
+      evidence: "D",
+      description: "3×5 onto a standard 60 cm plyo box.",
+    }),
+    node("box_jump.seated_box_45", "Seated Box Jump 45 cm", "squat", 1.5, reps(5, 3), ["box_jump.box_60"], {
+      evidence: "C",
+      description: "From a seated start, no countermovement — 3×5. Removes the stretch-shortening contribution and exposes pure concentric power, which is what stalls first when box height plateaus.",
+    }),
+    node("box_jump.box_75", "Box Jump 75 cm", "squat", 2, reps(3, 3), ["box_jump.box_60"], {
+      evidence: "D",
+      description: "3×3. Beyond this height, added box usually means more knee tuck rather than more jump — see the stunt's note.",
+    }),
+    node("box_jump.depth_to_box", "Depth Jump to Box", "squat", 3, reps(3, 3), [
+      "box_jump.box_75",
+      "squat_base.depth_jump",
+    ], {
+      evidence: "C",
+      description: "Drop from a 40 cm box, absorb, and rebound immediately onto a second box — 3×3. Reactive strength; keep ground contact short and stop the set the moment contact time lengthens.",
+    }),
+    node("box_jump.sl_box_40", "1-Leg Box Jump 40cm", "squat", 3.5, reps(3, 3, true), [
+      "box_jump.box_75",
+      "pistol_squat.box_pistol",
+    ], {
+      evidence: "D",
+      description: "3×3 per side. Unilateral power, and the honest test of the left/right asymmetry a two-footed jump hides.",
+    }),
+    node("box_jump.box_100", "Box Jump 100 cm (40 in)", "squat", 4.5, reps(1), [
+      "box_jump.depth_to_box",
+      "box_jump.seated_box_45",
+    ], {
+      isStunt: true,
+      evidence: "D",
+      estMonths: [9, 24],
+      description:
+        "A 40-inch box, landed in a stable quarter-squat. Honest caveat: box height is NOT vertical jump — a deep knee tuck adds box height without adding an inch of hip displacement. The seated box jump on the way here is the check that the height is real.",
+    }),
+
+    // --------------------------------------------- conditioning slots (legs)
+    // Nodes for routine exercises that previously credited nothing. Ids are the
+    // canonical exercise ids, so logged sets auto-feed the tree.
+    node("cond.backward_walk", "Backward Walking", "squat", -2.6, reps(100, 2), ["squat.air_squat"], {
+      evidence: "D",
+      description: "2×100 steps walked backwards — legs-05 counts steps, and its band-2 target is 100. Loads the quads through a shortened knee range with almost no eccentric braking, which is why it turns up in knee rehab.",
+    }),
+    node("cond.backward_jog", "Backward Jogging", "squat", -2.2, reps(50, 2), ["cond.backward_walk"], {
+      evidence: "D",
+      description: "2×50 steps jogged backwards — legs-05 band-1 target.",
+    }),
+    node("squat.skater_hop", "Skater Hop", "squat", -1.8, reps(10, 2, true), ["squat_base.sl_balance"], {
+      evidence: "D",
+      description: "Lateral bound from foot to foot, sticking each landing — 2×10 per side. Seed warm-up. The frontal-plane counterpart to the box jump line; almost all other lower-body work here is sagittal.",
+    }),
+    node("squat.side_lunge_weighted", "Weighted Side Lunge", "squat", -1, reps(10, 2, true), ["squat.side_lunge"], {
+      evidence: "D",
+      description: "2×10 per side holding a dumbbell or kettlebell. Seed exercise (legs-06).",
+    }),
+    node("squat.lunge_walk", "Lunge Walk", "squat", -0.5, reps(20, 2), ["squat_base.static_lunge"], {
+      evidence: "D",
+      description: "20 alternating walking lunges. Seed exercise (legs-02, band 2).",
+    }),
+    node("squat.lunge_scissor_jump", "Lunge Scissor Jump", "squat", -0.4, reps(10, 2), [
+      "squat.reverse_lunge",
+      "box_jump.jump_land",
+    ], {
+      evidence: "D",
+      description: "Jump and switch legs in the air, landing in a lunge — 10 total. Seed exercise (legs-01, band 1).",
+    }),
+    node("power.squat_press", "Squat Press", "squat", -0.2, reps(10, 3), ["squat.dumbbell_squat"], {
+      evidence: "D",
+      description: "Squat into an overhead press with dumbbells or a kettlebell — 3×10. Seed exercise (full-01).",
+    }),
+    node("squat.lunge_walk_weighted", "Weighted Lunge Walk", "squat", 0, reps(20, 2), ["squat.lunge_walk"], {
+      evidence: "D",
+      description: "20 walking lunges carrying dumbbells. Seed exercise (legs-02, band 1).",
+    }),
+    node("power.kb_clean_press_crossbody", "Cross-Body Clean & Press", "squat", 0.2, reps(8, 3, true), [
+      "squat.dumbbell_squat",
+    ], {
+      evidence: "D",
+      description: "Kettlebell cleaned across the body and pressed — 3×8 per side. Seed exercise (full-01).",
+    }),
+    node("squat.olj_knee_thrust", "1-Leg Jump Squat", "squat", 1.2, reps(10, 2), [
+      "squat.lunge_scissor_jump",
+      "squat.jump_squat",
+    ], {
+      evidence: "D",
+      description: "Single-leg jump squat driving the free knee up — 10 total, alternating. Seed exercise (legs-01, band 0) and the hardest rung of that chain.",
+    }),
   ],
 
   // Splice the new easier work beneath the hubs that skills.ts already owns.

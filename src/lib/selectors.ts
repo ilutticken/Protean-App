@@ -347,43 +347,42 @@ export function weeklyStreak(sessions: SessionLog[], athleteId: string, todayISO
 }
 
 export interface PrEvent {
-  athleteId: string;
   date: string;
   exerciseId: string;
   label: string;
 }
 
-/** Recent PRs across all athletes (shared feed, doc 05 §5.2 relatedness). */
+/** Recent PRs for this athlete (doc 05 §5.2 relatedness). */
 export function prFeed(data: AppData, limit = 6): PrEvent[] {
   const events: PrEvent[] = [];
-  for (const a of data.athletes) {
-    // Compare each session against the PRE-session best, then merge — otherwise
-    // ascending sets within the first session fire bogus PRs (review finding #18).
-    const best: Record<string, { reps: number; hold: number; kg: number }> = {};
-    for (const s of athleteSessions(data.sessions, a.id)) {
-      const sessionMax: Record<string, { reps: number; hold: number; kg: number }> = {};
-      for (const e of s.entries) {
-        const hold = isHoldSlot(slotById[e.slotId]);
-        const m = (sessionMax[e.exerciseId] ??= { reps: 0, hold: 0, kg: 0 });
-        for (const set of e.sets) {
-          if (hold) m.hold = Math.max(m.hold, set.value);
-          else m.reps = Math.max(m.reps, set.value);
-          if (set.weightKg !== undefined) m.kg = Math.max(m.kg, set.weightKg);
-        }
+  const athleteId = data.athlete?.id;
+  if (!athleteId) return events;
+  // Compare each session against the PRE-session best, then merge — otherwise
+  // ascending sets within the first session fire bogus PRs (review finding #18).
+  const best: Record<string, { reps: number; hold: number; kg: number }> = {};
+  for (const s of athleteSessions(data.sessions, athleteId)) {
+    const sessionMax: Record<string, { reps: number; hold: number; kg: number }> = {};
+    for (const e of s.entries) {
+      const hold = isHoldSlot(slotById[e.slotId]);
+      const m = (sessionMax[e.exerciseId] ??= { reps: 0, hold: 0, kg: 0 });
+      for (const set of e.sets) {
+        if (hold) m.hold = Math.max(m.hold, set.value);
+        else m.reps = Math.max(m.reps, set.value);
+        if (set.weightKg !== undefined) m.kg = Math.max(m.kg, set.weightKg);
       }
-      for (const [exId, m] of Object.entries(sessionMax)) {
-        const b = (best[exId] ??= { reps: 0, hold: 0, kg: 0 });
-        const name = exercises[exId]?.name ?? exId;
-        if (b.hold > 0 && m.hold > b.hold)
-          events.push({ athleteId: a.id, date: s.date, exerciseId: exId, label: `${name} ${m.hold}s hold` });
-        if (b.reps > 0 && m.reps > b.reps)
-          events.push({ athleteId: a.id, date: s.date, exerciseId: exId, label: `${name} ×${m.reps}` });
-        if (b.kg > 0 && m.kg > b.kg)
-          events.push({ athleteId: a.id, date: s.date, exerciseId: exId, label: `${name} ${m.kg}kg` });
-        b.hold = Math.max(b.hold, m.hold);
-        b.reps = Math.max(b.reps, m.reps);
-        b.kg = Math.max(b.kg, m.kg);
-      }
+    }
+    for (const [exId, m] of Object.entries(sessionMax)) {
+      const b = (best[exId] ??= { reps: 0, hold: 0, kg: 0 });
+      const name = exercises[exId]?.name ?? exId;
+      if (b.hold > 0 && m.hold > b.hold)
+        events.push({ date: s.date, exerciseId: exId, label: `${name} ${m.hold}s hold` });
+      if (b.reps > 0 && m.reps > b.reps)
+        events.push({ date: s.date, exerciseId: exId, label: `${name} ×${m.reps}` });
+      if (b.kg > 0 && m.kg > b.kg)
+        events.push({ date: s.date, exerciseId: exId, label: `${name} ${m.kg}kg` });
+      b.hold = Math.max(b.hold, m.hold);
+      b.reps = Math.max(b.reps, m.reps);
+      b.kg = Math.max(b.kg, m.kg);
     }
   }
   return events.sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, limit);

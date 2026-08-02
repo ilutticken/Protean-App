@@ -2,9 +2,10 @@ import { useRef, useState } from "react";
 import type { DayId, Slot } from "../../lib/types";
 import { seedPlan, authorQuestions } from "../../data/seed-plan";
 import { exercises } from "../../data/exercises";
-import { useApp, updateAthleteState } from "../../lib/useAppData";
+import { useApp, updateAthlete, updateAthleteState } from "../../lib/useAppData";
 import { exportJson, importJson, save } from "../../lib/storage";
 import { isInStepSlot, targetFor } from "../../lib/progression";
+import { resolveSlotState } from "../../lib/slot-identity";
 import { localISODate } from "../../lib/dates";
 import { cmToFeetInches, feetInchesToCm, formatHeight, fromKg, toKg } from "../../lib/units";
 import { SECTORS } from "../sectors";
@@ -16,6 +17,7 @@ const DAY_LABEL: Record<string, string> = { legs: "Legs", pull: "Pull", push: "P
 export default function PlanScreen() {
   const store = useApp();
   const { data, athlete, athleteState } = store;
+  const tendonPacing = data.settings.tendonPacing;
   const [day, setDay] = useState<Exclude<DayId, "mobility">>("legs");
   const [qOpen, setQOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -41,13 +43,10 @@ export default function PlanScreen() {
     // Entry is in the athlete's preferred unit; storage is always kg (finding #26).
     const kg = Math.round(toKg(raw, athlete.unit) * 10) / 10;
     const date = localISODate();
-    store.update((d) => ({
-      ...d,
-      athletes: d.athletes.map((a) =>
-        a.id === athlete.id
-          ? { ...a, bodyweightKg: kg, bodyweightLog: [...a.bodyweightLog, { date, kg }] }
-          : a,
-      ),
+    updateAthlete(store, (a) => ({
+      ...a,
+      bodyweightKg: kg,
+      bodyweightLog: [...a.bodyweightLog, { date, kg }],
     }));
     setBw("");
   }
@@ -58,24 +57,14 @@ export default function PlanScreen() {
         ? Number(htCm)
         : feetInchesToCm(Number(htFt) || 0, Number(htIn) || 0);
     if (!Number.isFinite(cm) || cm <= 0) return;
-    store.update((d) => ({
-      ...d,
-      athletes: d.athletes.map((a) =>
-        a.id === athlete.id ? { ...a, heightCm: Math.round(cm * 10) / 10 } : a,
-      ),
-    }));
+    updateAthlete(store, (a) => ({ ...a, heightCm: Math.round(cm * 10) / 10 }));
     setHtCm("");
     setHtFt("");
     setHtIn("");
   }
 
   function toggleUnit() {
-    store.update((d) => ({
-      ...d,
-      athletes: d.athletes.map((a) =>
-        a.id === athlete.id ? { ...a, unit: a.unit === "kg" ? "lb" : "kg" } : a,
-      ),
-    }));
+    updateAthlete(store, (a) => ({ ...a, unit: a.unit === "kg" ? "lb" : "kg" }));
     setBw("");
     setHtCm("");
     setHtFt("");
@@ -128,7 +117,7 @@ export default function PlanScreen() {
                 key={slot.id}
                 slot={shown}
                 accent={athlete.accent}
-                stateIndex={athleteState.slotState[shown.id]?.stepIndex}
+                stateIndex={resolveSlotState(shown, athleteState.slotState[shown.id])?.stepIndex}
                 confirms={athleteState.slotState[shown.id]?.confirmCount ?? 0}
                 alt={
                   altSlot
@@ -239,6 +228,39 @@ export default function PlanScreen() {
         <p className="text-ink-3 text-xs">
           Everything lives in this browser's storage — export a backup now and then.
         </p>
+
+        <div className="border-t border-line pt-3">
+          <div className="flex items-center justify-between gap-3">
+            <div>
+              <div className="text-sm font-medium">Straight-arm pacing</div>
+              <div className="text-ink-3 text-xs">
+                {tendonPacing === "guided"
+                  ? "Advancement on straight-arm steps waits 21 days between steps."
+                  : "Warnings only — advancement is never blocked."}
+              </div>
+            </div>
+            <button
+              onClick={() =>
+                store.update((d) => ({
+                  ...d,
+                  settings: {
+                    ...d.settings,
+                    tendonPacing: d.settings.tendonPacing === "guided" ? "advisory" : "guided",
+                  },
+                }))
+              }
+              className="shrink-0 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm capitalize"
+            >
+              {tendonPacing}
+            </button>
+          </div>
+          <p className="text-ink-3 text-[11px] mt-2">
+            Tendon and ligament collagen turns over far slower than muscle, so straight-arm work
+            (front lever, planche, LaLanne push-ups) outpaces its own connective tissue — that is
+            where most calisthenics elbow and shoulder injuries come from. Advisory is the default:
+            the warning appears, the decision stays yours.
+          </p>
+        </div>
       </section>
 
       {/* Methodology */}
@@ -248,8 +270,8 @@ export default function PlanScreen() {
           <li>e1RM: Brzycki (&lt;8 reps) blended into Epley (≥10); never estimated above 15 reps.</li>
           <li>Bodyweight moves convert to load via force-plate fractions (push-up 75% BW, pull-up/dip 96%, pistol 84%).</li>
           <li>Levels come from sex-specific strengthlevel.com tables interpolated at your actual bodyweight.</li>
-          <li>Cross-athlete comparison uses DOTS — the same score means the same relative strength.</li>
-          <li>Chain advancement: all sets at target ×2 sessions; straight-arm steps rate-limited to 1 per 3 weeks (tendons adapt slower than muscle).</li>
+          <li>Strength levels are DOTS/Wilks-normalized, so a score means the same thing at any bodyweight.</li>
+          <li>Chain advancement: all sets at target ×2 sessions. Straight-arm steps carry a 21-day tendon-pacing note — advisory by default, enforceable from Settings above.</li>
           <li>Deloads: half the sets at 90% load — never a full week off.</li>
           <li>Flips and high-risk skills never unlock from numbers — you attest them, with surface/spotter guidance.</li>
         </ul>

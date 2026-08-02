@@ -1,8 +1,8 @@
 # Protean
 
-Local-first workout web app for two athletes (one male, one female): progressive
-calisthenics + weights plan, fast logging, science-backed strength estimates, hex skill-tree
-stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, no chart libs, vitest.
+Local-first workout web app, **one athlete per install** (partners each run their own copy):
+progressive calisthenics + weights plan, fast logging, science-backed strength estimates, hex
+skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, no chart libs, vitest.
 
 - `npm run dev` / `npm run build` / `npm run typecheck` / `npm test`
 - **Read `docs/PLAN.md` first** — architecture, module map, and the locked scientific decisions.
@@ -14,6 +14,16 @@ stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, no chart li
   (`src/lib/units.ts` converts for display); dates via `localISODate()` in `src/lib/dates.ts`,
   never `toISOString().slice(0,10)`; e1RM only for reps ≤ 10 (11–15 flagged, ≥16 work-capacity
   only); acrobatic skills never auto-unlock.
+- **Adding content must never erase progress** (PLAN.md #14). New exercises, chain rungs, and skill
+  nodes need no migration — but slot progress is keyed, not positional: read stored `SlotState`
+  through `resolveSlotState()` and write it through `stampSlotState()` (`src/lib/slot-identity.ts`).
+  Ids are permanent; renaming one is a migration, and migrations archive rather than drop.
+- Goal stunts (PLAN-GENERATOR.md §9.2): `one_arm_pushup.oap`, `front_lever.full`, `human_flag.full`,
+  `hspu.free_hspu`, `barbell_deadlift.2_0xbw`, `pistol_squat.pistol_half_bw`.
+- Every routine exercise must credit a tree node — the invariant is "0 orphans, 0 dead slots"
+  (PLAN-GENERATOR.md §9.6). New slot exercises need a node whose id IS the exercise id. Node names
+  must pack into 2 lines for the hex map; `skills-ext.test.ts` enforces it.
+- Straight-arm pacing is **advisory by default** — warn, never block (PLAN.md "Tendon pacing").
 - Skill tree: core lines live in `src/data/skills.ts`; per-sector additions go in
   `src/data/skills-ext/<sector>.ts` using the constructors in `src/data/skill-helpers.ts`.
   Extensions may use negative rings for pre-hub beginner content and `rewire` to splice
