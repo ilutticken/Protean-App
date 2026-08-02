@@ -149,6 +149,26 @@ export const posteriorExt: SectorExtension = {
     node("barbell_deadlift.2_25xbw", "Deadlift 2.25×BW", "posterior", 1.5, e1rmRatio("deadlift", 2.25), [
       "barbell_deadlift.2_0xbw",
     ], { evidence: "D", description: "Halfway between the intermediate (2.00) and advanced (2.50) standards — a year-scale gap otherwise." }),
+
+    // ---------------------------------------------- loaded feats (deadlift kin)
+    // Breadth around the deadlift ladder: three old-time variants plus one circus lift.
+    node("barbell.suitcase_deadlift", "Suitcase Deadlift", "posterior", -0.5, wreps(3, 0.5), [
+      "barbell_deadlift.1_0xbw",
+    ], { evidence: "D", description: "One bar, one hand, at your side — 3 reps per side at half bodyweight. Anti-lateral-flexion work disguised as a deadlift; the obliques quit long before the grip does." }),
+    node("barbell.jefferson_deadlift", "Jefferson Deadlift", "posterior", 0.5, wreps(1, 1.5), [
+      "barbell_deadlift.1_5xbw",
+    ], { evidence: "D", description: "Straddle the bar, one hand in front of the leg and one behind, and stand. Asymmetric and rotational — it loads the hips in a plane nothing else here touches." }),
+    node("barbell.hack_lift", "Hack Lift BW", "posterior", 0.5, wreps(1, 1), ["barbell_deadlift.1_5xbw"], {
+      evidence: "D",
+      description: "Deadlift with the bar BEHIND the legs, as George Hackenschmidt did it. Quad-dominant, and the bar scrapes up the hamstrings the whole way.",
+    }),
+    node("barbell.steinborn", "Steinborn Lift", "posterior", 2.5, wreps(1, 1), [
+      "barbell_deadlift.2_0xbw",
+      "barbell_squat.1_5xbw",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [24, 48],
+      description: "Stand a loaded bar on one end, tip it onto your back, squat it, and reverse the whole thing — no rack at any point. Henry Steinborn's lift, and probably the most spectacular thing a barbell can be made to do. ♀ criterion 0.78×BW.",
+    }),
   ],
 
   // Splice the new easier work beneath the already-authored hubs (skills.ts is untouchable).

@@ -321,6 +321,20 @@ export const pullLeversExt: SectorExtension = {
       description:
         "One strict barbell curl at half bodyweight, back flat against a wall. A long-standing gym benchmark and the only stunt here that isolates a single joint. ♀ criterion 0.35×BW.",
     }),
+
+    // ------------------------------------------- weighted-calisthenics capstones
+    node("one_arm_pullup.wpu_100pct", "Weighted Pull-Up +100%", S, 5.5, wreps(1, 1), [
+      "pull_base.wpu_70pct",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [30, 60],
+      description: "One pull-up with a second bodyweight hanging off you. Roughly one-arm pull-up strength, expressed with a belt instead. ♀ criterion 0.70×BW added.",
+    }),
+    node("pull.weighted_muscleup", "Weighted Muscle-Up", S, 6, wreps(1, 0.25), [
+      "muscle_up_bar.strict_bar_mu",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [24, 48],
+      description: "A strict bar muscle-up with +25% bodyweight. The transition is where it fails, every time. ♀ criterion 0.175×BW added.",
+    }),
   ],
 
   // Splice the new easier work underneath the already-authored hubs. Every id on the

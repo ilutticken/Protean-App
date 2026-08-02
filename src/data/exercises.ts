@@ -213,6 +213,29 @@ const list: Exercise[] = [
   e("barbell.row", "Barbell Bent-Over Row", "back_chain", "horizontal-pull", ["sagittal"], { loadable: true }),
   e("barbell.curl", "Barbell Curl", "pull_levers", "vertical-pull", ["sagittal"], { loadable: true }),
   e("barbell.hip_thrust", "Barbell Hip Thrust", "posterior", "hinge", ["sagittal"], { loadable: true }),
+
+  // --- Loaded feats: barbell variants and odd-object lifts -----------------------------
+  // Not in the routine — these are tested from Stats -> "Test a lift" and exist so the
+  // weightlifting / weighted-calisthenics side of the stunt map has depth and breadth.
+  // Deliberately absent from standardsKeyByExercise: no StrengthLevel table covers them,
+  // so they feed skill criteria (weighted-reps ratios) but never e1RM or the radar.
+  e("barbell.front_squat", "Barbell Front Squat", "squat", "squat", ["sagittal"], { loadable: true }),
+  e("barbell.overhead_squat", "Overhead Squat", "squat", "squat", ["sagittal"], { loadable: true }),
+  e("barbell.zercher_squat", "Zercher Squat", "squat", "squat", ["sagittal"], { loadable: true }),
+  e("barbell.suitcase_deadlift", "Suitcase Deadlift", "posterior", "hinge", ["frontal"], { loadable: true }),
+  e("barbell.jefferson_deadlift", "Jefferson Deadlift", "posterior", "hinge", ["transverse"], { loadable: true }),
+  e("barbell.hack_lift", "Barbell Hack Lift", "posterior", "hinge", ["sagittal"], { loadable: true }),
+  e("barbell.steinborn", "Steinborn Lift", "posterior", "squat", ["frontal"], { loadable: true }),
+  e("barbell.power_snatch", "Power Snatch", "back_chain", "power", ["sagittal"], { loadable: true }),
+  e("barbell.snatch_balance", "Snatch Balance", "back_chain", "power", ["sagittal"], { loadable: true }),
+  e("barbell.sots_press", "Sots Press", "back_chain", "vertical-push", ["sagittal"], { loadable: true }),
+  e("barbell.clean_and_jerk", "Clean & Jerk", "back_chain", "power", ["sagittal"], { loadable: true }),
+  e("barbell.two_hands_anyhow", "Two Hands Anyhow", "dips_planche_hs", "vertical-push", ["frontal"], { loadable: true }),
+  e("kb.turkish_getup", "Turkish Get-Up", "dips_planche_hs", "vertical-push", ["transverse"], { loadable: true }),
+  e("kb.windmill", "Windmill", "dips_planche_hs", "core", ["frontal"], { loadable: true }),
+  e("kb.bent_press", "Bent Press", "dips_planche_hs", "vertical-push", ["frontal"], { loadable: true }),
+  e("db.crucifix_hold", "Crucifix Hold", "dips_planche_hs", "vertical-push", ["frontal"], { loadable: true }),
+  e("pull.weighted_muscleup", "Weighted Muscle-Up", "pull_levers", "vertical-pull", ["sagittal"], { loadable: true }),
   // Weighted-calisthenics standards aliases (ids not used by the seed, addendum-3 §4.1).
   e("pull.weighted_pullup", "Weighted Pull-Up", "pull_levers", "vertical-pull", ["frontal", "sagittal"], { bwLoadFactor: F_PULLUP_DIP, loadable: true }),
   e("dip.weighted_dip", "Weighted Dip", "dips_planche_hs", "vertical-push", ["sagittal"], { bwLoadFactor: F_PULLUP_DIP, loadable: true }),

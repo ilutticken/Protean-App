@@ -26,6 +26,12 @@ skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, 
 - **`seed-plan.ts` is the verbatim PDF and is never edited for training numbers.** What the
   app prescribes comes from `src/data/prescription.ts` (R-DYN 3×8 on strength progressions,
   PDF doses on conditioning). Read the plan via `prescription.plan`, not `seedPlan.days`.
+- Loaded feats (front/overhead/Zercher squat, Jefferson/hack/suitcase/Steinborn, C&J, power
+  snatch, snatch balance, Sots press, Turkish get-up, windmill, bent press, crucifix hold,
+  two hands anyhow, weighted muscle-up/dip/pull-up) are **quick-log only** — not in the
+  routine, tested from Stats → "Test a lift". They use `weighted-reps` bwRatio criteria and
+  are deliberately absent from `standardsKeyByExercise`: no StrengthLevel table covers them,
+  so they must never feed e1RM or the radar.
 - A criterion's `sets` is **enforced** — N qualifying sets in ONE session (doc 01 R-DYN).
 - Straight-arm pacing is **advisory by default** — warn, never block (PLAN.md "Tendon pacing").
 - Runs/swims have no home in the routine: `AthleteState.cardioLog` is the sole producer for the

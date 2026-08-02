@@ -194,6 +194,28 @@ export const backChainExt: SectorExtension = {
       evidence: "D",
       description: "2×15 with a band anchored at head height — full-08's band-1 target. Seed exercise (full-08). External rotation under low load — the direct counterweight to the pressing and straight-arm volume elsewhere in the week.",
     }),
+
+    // ------------------------------------------------ Olympic depth + Sots press
+    // The sector jumped power clean -> clean & press -> snatch with nothing between.
+    node("barbell.power_snatch", "Power Snatch 0.75×BW", S, 0.5, wreps(1, 0.75), [
+      "power_ramp.power_clean_0_75x",
+    ], { evidence: "D", description: "Ground to overhead in one movement, caught above parallel. The rung the bodyweight snatch was missing beneath it." }),
+    node("barbell.snatch_balance", "Snatch Balance", S, 1, wreps(1, 0.5), ["barbell.power_snatch"], {
+      evidence: "D",
+      description: "Bar on the back: drive it up and drop UNDER it into a full overhead squat. Teaches the catch position faster than any amount of pulling.",
+    }),
+    node("barbell.sots_press", "Sots Press", S, 1.5, wreps(3, 0.25), ["barbell.snatch_balance"], {
+      evidence: "D",
+      description: "A strict press from the BOTTOM of a squat — 3 reps at 25% bodyweight. Looks impossible the first time you see it, and is almost pure thoracic and shoulder mobility.",
+    }),
+    node("clean_jerk.bw", "BW Clean & Jerk", S, 2.5, wreps(1, 1), ["power_stunts.bw_clean_and_press"], {
+      isStunt: true, evidence: "D", estMonths: [12, 30],
+      description: "Your own bodyweight from floor to overhead, split or power jerk. The classic all-round strength benchmark. ♀ criterion 0.80×BW.",
+    }),
+    node("clean_jerk.1_5xbw", "Clean & Jerk 1.5×BW", S, 3.5, wreps(1, 1.5), ["clean_jerk.bw"], {
+      isStunt: true, evidence: "D", estMonths: [36, 72],
+      description: "1.5× bodyweight overhead. National-level territory in most weight classes. ♀ criterion 1.2×BW.",
+    }),
   ],
 
   // Splice the new work beneath the shipped hubs so the easier nodes actually gate them.

@@ -57,6 +57,21 @@ export const skillExerciseAlias: Record<string, string> = {
   "bridge_ramp.sl_glute_bridge": "hinge.glute_bridge_unilateral",
   "posterior_base.hip_thrust_2x": "barbell.hip_thrust",
 
+  // Loaded-feat ladders: several rep/load rungs over ONE catalog movement, tested from
+  // Stats -> "Test a lift". The node's own bwRatio still has to be earned at each rung.
+  "front_squat.0_75xbw": "barbell.front_squat",
+  "front_squat.1_0xbw": "barbell.front_squat",
+  "front_squat.1_5xbw": "barbell.front_squat",
+  "overhead_squat.0_5xbw": "barbell.overhead_squat",
+  "overhead_squat.0_75xbw": "barbell.overhead_squat",
+  "overhead_squat.bw": "barbell.overhead_squat",
+  "tgu.quarter_bw": "kb.turkish_getup",
+  "tgu.half_bw": "kb.turkish_getup",
+  "clean_jerk.bw": "barbell.clean_and_jerk",
+  "clean_jerk.1_5xbw": "barbell.clean_and_jerk",
+  "one_arm_pullup.wpu_100pct": "one_arm_pullup.wpu_25pct",
+  "dip.weighted_bw": "dip.dip_weighted",
+
   // Jump rope volume rung — same movement as the catalog skip, 5x the reps.
   "skip.skip_500": "cond.skip",
 

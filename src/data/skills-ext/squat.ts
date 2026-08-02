@@ -297,6 +297,37 @@ export const squatExt: SectorExtension = {
       evidence: "D",
       description: "Single-leg jump squat driving the free knee up — 10 total, alternating. Seed exercise (legs-01, band 0) and the hardest rung of that chain.",
     }),
+
+    // ------------------------------------------------ loaded feats (barbell)
+    // Depth and breadth on the barbell side: the sector had exactly one ladder (back
+    // squat). Criteria are weighted-reps ratios read from the quick lift-log, not e1RM â
+    // no StrengthLevel table covers these lifts and inventing one would be dishonest.
+    node("front_squat.0_75xbw", "Front Squat 0.75×BW", "squat", 0.5, wreps(1, 0.75), [
+      "barbell_squat.1_0xbw",
+    ], { evidence: "D", description: "Rack position, elbows high, torso vertical. A front squat runs roughly 80-85% of a back squat for most lifters." }),
+    node("front_squat.1_0xbw", "Front Squat BW", "squat", 1.5, wreps(1, 1), ["front_squat.0_75xbw"], {
+      evidence: "D",
+      description: "Bodyweight on the front rack. The upper back usually gives out before the legs do.",
+    }),
+    node("front_squat.1_5xbw", "Front Squat 1.5×BW", "squat", 2.5, wreps(1, 1.5), ["front_squat.1_0xbw"], {
+      isStunt: true, evidence: "D", estMonths: [18, 42],
+      description: "1.5× bodyweight held on the front rack — an Olympic-lifting benchmark, and the honest test of whether a big back squat is legs or leverage. ♀ criterion 1.08×BW.",
+    }),
+    node("overhead_squat.0_5xbw", "OH Squat 0.5×BW", "squat", 1, wreps(1, 0.5), ["barbell_squat.1_0xbw"], {
+      evidence: "D",
+      description: "Bar locked overhead, arms straight, squat to depth. At first this is almost entirely a shoulder and thoracic mobility problem, not a strength one.",
+    }),
+    node("overhead_squat.0_75xbw", "OH Squat 0.75×BW", "squat", 2, wreps(1, 0.75), ["overhead_squat.0_5xbw"], {
+      evidence: "D", description: "The same lift with a real load overhead.",
+    }),
+    node("overhead_squat.bw", "Bodyweight OH Squat", "squat", 3, wreps(1, 1), ["overhead_squat.0_75xbw"], {
+      isStunt: true, evidence: "D", estMonths: [18, 48],
+      description: "Your own bodyweight held overhead at the bottom of a full squat. One of the best-looking lifts there is, and the hardest mobility standard in the app. ♀ criterion 0.72×BW.",
+    }),
+    node("barbell.zercher_squat", "Zercher Squat BW", "squat", 2, wreps(1, 1), ["barbell_squat.1_5xbw"], {
+      evidence: "D",
+      description: "Bar carried in the crook of the elbows. Brutal on the upper back, and the only squat variant that actively fights spinal flexion. The bruises are part of it.",
+    }),
   ],
 
   // Splice the new easier work beneath the hubs that skills.ts already owns.

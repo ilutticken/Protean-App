@@ -243,6 +243,41 @@ export const dipsPlancheHsExt: SectorExtension = {
       description:
         "3×3 slow lowers out of a freestanding handstand, bailing forward if balance goes. The missing rung between a deficit wall HSPU and pressing back up with no wall.",
     }),
+
+    // ---------------------------------------------- overhead feats (odd-object)
+    // Old-time strongman lifts. Every one is a one-arm overhead stability problem, which
+    // is exactly what this sector's handstand and ring work needs and never trains.
+    node("tgu.quarter_bw", "Turkish Get-Up 25%", S, 1, wreps(1, 0.25, 1), ["barbell_ohp.0_5xbw"], {
+      evidence: "D",
+      description: "Floor to standing and back down with a bell locked overhead, one arm, never letting it drift. Five distinct positions, each of which can be failed on its own.",
+    }),
+    node("kb.windmill", "Windmill 25% BW", S, 1.5, wreps(5, 0.25, 2), ["tgu.quarter_bw"], {
+      evidence: "D",
+      description: "Weight overhead, hinge sideways and touch the floor while watching the bell — 2×5 per side. Loaded frontal-plane hinging, which nothing else in the app trains.",
+    }),
+    node("db.crucifix_hold", "Crucifix Hold", S, 2.5, wreps(1, 0.15, 1), ["kb.windmill"], {
+      evidence: "D",
+      description: "Two bells held straight out at shoulder height, arms locked — 15% of bodyweight in EACH hand. The loaded cousin of the iron cross, and a classic music-hall feat.",
+    }),
+    node("tgu.half_bw", "½ BW Turkish Get-Up", S, 3, wreps(1, 0.5, 1), ["tgu.quarter_bw"], {
+      isStunt: true, evidence: "D", estMonths: [18, 42],
+      description: "Half your bodyweight, one arm, floor to standing and back down. Grip, shoulder, hip and trunk all have to hold at once for the better part of a minute. ♀ criterion 0.35×BW.",
+    }),
+    node("kb.bent_press", "½ BW Bent Press", S, 3.5, wreps(1, 0.5, 1), [
+      "kb.windmill",
+      "barbell_ohp.1_0xbw",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [24, 48],
+      description: "You never press the weight — you bend away and screw yourself underneath it until the arm locks, then stand up. Arthur Saxon's lift; he did it with 168 kg. ♀ criterion 0.35×BW.",
+    }),
+    node("barbell.two_hands_anyhow", "Two Hands Anyhow", S, 4.5, wreps(1, 0.75, 1), ["kb.bent_press"], {
+      isStunt: true, evidence: "D", estMonths: [30, 60],
+      description: "Bent-press one weight overhead, then pick a second off the floor with the free hand and bring that up too — 0.75×BW combined, both locked out at once. The great music-hall finisher. ♀ criterion 0.52×BW.",
+    }),
+    node("dip.weighted_bw", "Weighted Dip +100%", S, 4, wreps(1, 1), ["dip.weighted_half_bw"], {
+      isStunt: true, evidence: "D", estMonths: [24, 48],
+      description: "A dip with a second bodyweight hanging from the belt — 2× bodyweight moving in total. ♀ criterion 0.70×BW added.",
+    }),
   ],
 
   // Splice the new content beneath the already-authored hubs. Every value's ring is strictly

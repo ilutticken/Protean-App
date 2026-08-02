@@ -134,6 +134,35 @@ export const femaleBwRatioOverride: Record<string, number> = {
 
   // --- Loaded carry stunt (skills-ext/run_martial.ts) ------------------------------------
   "carry.sandbag_bw": 0.75,
+
+  // --- Loaded feats -------------------------------------------------------------------
+  // Same line multipliers as above: squat x0.72, deadlift x0.78, upper/overhead x0.70,
+  // olympic/power x0.80 (doc 01 SS4.1/SS6).
+  "front_squat.0_75xbw": 0.54,
+  "front_squat.1_0xbw": 0.72,
+  "front_squat.1_5xbw": 1.08,
+  "overhead_squat.0_5xbw": 0.36,
+  "overhead_squat.0_75xbw": 0.54,
+  "overhead_squat.bw": 0.72,
+  "barbell.zercher_squat": 0.72,
+  "barbell.suitcase_deadlift": 0.39,
+  "barbell.jefferson_deadlift": 1.17,
+  "barbell.hack_lift": 0.78,
+  "barbell.steinborn": 0.78,
+  "barbell.power_snatch": 0.6,
+  "barbell.snatch_balance": 0.4,
+  "barbell.sots_press": 0.175,
+  "clean_jerk.bw": 0.8,
+  "clean_jerk.1_5xbw": 1.2,
+  "tgu.quarter_bw": 0.175,
+  "tgu.half_bw": 0.35,
+  "kb.windmill": 0.175,
+  "kb.bent_press": 0.35,
+  "db.crucifix_hold": 0.105,
+  "barbell.two_hands_anyhow": 0.52,
+  "dip.weighted_bw": 0.7,
+  "one_arm_pullup.wpu_100pct": 0.7,
+  "pull.weighted_muscleup": 0.175,
   "barbell_squat.0_75xbw": 0.54, // ×0.72, cf. 1_0xbw 0.72 — without this ♀ 0.75x gates ABOVE ♀ 1.0x
   "barbell_deadlift.1_0xbw": 0.78, // ×0.78, cf. 1_5xbw 1.17 / 2_0xbw 1.5
   "barbell_deadlift.1_25xbw": 0.975,

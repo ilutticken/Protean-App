@@ -57,6 +57,24 @@ const TESTABLE_LIFTS: { exerciseId: string; label: string }[] = [
   // from, so a quick-logged set also feeds the weighted pull-up / dip skill rungs.
   { exerciseId: "one_arm_pullup.wpu_25pct", label: "Weighted Pull-Up (added kg)" },
   { exerciseId: "dip.dip_weighted", label: "Weighted Dip (added kg)" },
+  { exerciseId: "pull.weighted_muscleup", label: "Weighted Muscle-Up (added kg)" },
+  // Loaded feats — no StrengthLevel table, so these feed skill criteria only.
+  { exerciseId: "barbell.front_squat", label: "Front Squat" },
+  { exerciseId: "barbell.overhead_squat", label: "Overhead Squat" },
+  { exerciseId: "barbell.zercher_squat", label: "Zercher Squat" },
+  { exerciseId: "barbell.clean_and_jerk", label: "Clean & Jerk" },
+  { exerciseId: "barbell.power_snatch", label: "Power Snatch" },
+  { exerciseId: "barbell.snatch_balance", label: "Snatch Balance" },
+  { exerciseId: "barbell.sots_press", label: "Sots Press" },
+  { exerciseId: "barbell.suitcase_deadlift", label: "Suitcase Deadlift" },
+  { exerciseId: "barbell.jefferson_deadlift", label: "Jefferson Deadlift" },
+  { exerciseId: "barbell.hack_lift", label: "Hack Lift" },
+  { exerciseId: "barbell.steinborn", label: "Steinborn Lift" },
+  { exerciseId: "kb.turkish_getup", label: "Turkish Get-Up" },
+  { exerciseId: "kb.windmill", label: "Windmill" },
+  { exerciseId: "kb.bent_press", label: "Bent Press" },
+  { exerciseId: "db.crucifix_hold", label: "Crucifix Hold (per hand)" },
+  { exerciseId: "barbell.two_hands_anyhow", label: "Two Hands Anyhow" },
 ];
 
 export default function Stats() {
