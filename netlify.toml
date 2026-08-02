@@ -1,6 +1,10 @@
 [build]
-  command = "npm run build"
+  command = "npm ci && npm run build"
   publish = "dist"
+
+[build.environment]
+  # Vite 7 requires Node ^20.19 || >=22.12; pin so a host default can't break the build.
+  NODE_VERSION = "22"
 
 # Single-page app: every route serves index.html.
 [[redirects]]

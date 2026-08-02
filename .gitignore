@@ -1,0 +1,29 @@
+# Dependencies — never commit these. Files created on Windows carry no Unix
+# executable bit, so a committed node_modules makes Linux CI fail with
+# "sh: 1: tsc: Permission denied". Let the host run `npm install` instead.
+node_modules/
+
+# Build output (Netlify/Vercel build it themselves)
+dist/
+dist-ssr/
+*.local
+
+# Logs & caches
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+.vite/
+.cache/
+
+# Editor / OS
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
