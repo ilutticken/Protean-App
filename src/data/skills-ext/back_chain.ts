@@ -190,9 +190,9 @@ export const backChainExt: SectorExtension = {
       evidence: "D",
       description: "3×15 from a bar or rings set high, pulling to the forehead with the elbows above the wrists. Seed exercise (full-08).",
     }),
-    node("pull.face_pull_band", "Band Face Pull", S, -2.7, reps(20, 3), ["pull.face_pull_bw"], {
+    node("pull.face_pull_band", "Band Face Pull", S, -2.7, reps(15, 2), ["pull.face_pull_bw"], {
       evidence: "D",
-      description: "3×20 with a band anchored at head height. Seed exercise (full-08). External rotation under low load — the direct counterweight to the pressing and straight-arm volume elsewhere in the week.",
+      description: "2×15 with a band anchored at head height — full-08's band-1 target. Seed exercise (full-08). External rotation under low load — the direct counterweight to the pressing and straight-arm volume elsewhere in the week.",
     }),
   ],
 

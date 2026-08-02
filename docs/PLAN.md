@@ -63,6 +63,26 @@ science-backed strength/performance estimates, and a stunt skill tree.
       prefer adding a new id and leaving the old one in place.
     - **Migrations archive, never drop** — see `AppData.archived`, written by v1 → v2.
 
+**Rep prescription — R-DYN** (2026-08-02, athlete-directed): the PDF gives each chain a
+single high rep band (2×25/50/100), which produces nonsense at the hard end (push-03
+prescribed 2×20 *full planche push-ups*, flagged in the seed as PENDING-Q3) and, at the easy
+end, rep counts far past the point where you should have advanced to a harder variation.
+`src/data/prescription.ts` overlays the practitioner standard — **3 sets × 8 clean reps in
+one session** (doc 01 rule R-DYN; r/bodyweightfitness RR "advance at 3×8"; Low `3×5→12`) —
+on the 26 slots that are strength progressions. The 16 conditioning slots (carries, skips,
+crawls, quasi-iso holds, bag rounds, metcon chains, single-step accessories) keep their PDF
+doses; `CONDITIONING_SLOTS` in that file is the one place to reclassify a slot.
+`seed-plan.ts` remains the untouched verbatim transcription, still pinned by
+`seed-plan.test.ts` — the overlay derives from it and never mutates it. Evidence tier is
+PRACTITIONER: doc 01 §5 states no controlled trials exist on progression criteria.
+
+**Criterion `sets` is enforced** (2026-08-02): `criterionMet` previously checked only the
+best single set, so a node displaying "3×8" unlocked on one hard set. R-DYN is explicitly
+"3 sets × 8 in ONE session", so `ExerciseBest.sessions` now carries per-session set values
+and the count is enforced. Sets across different days never add up. Skill criteria are
+aligned to the plan by `buildSkills` — lowered to 3×8 where they asked for more, never
+raised, so doc 01's genuine standards (planche push-up 3×3, HSPU 3×5) keep their numbers.
+
 **Tendon pacing** (2026-08-02, athlete-directed): the straight-arm 21-day step rate limit from
 addendum-2 §1.3 is now a **setting**, defaulting to `advisory`. `seedPlan.config` is unchanged at
 21 days and `applySession` is unchanged; `Workout.tsx` passes `saStepRateLimitDays: 0` in advisory

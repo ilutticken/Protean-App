@@ -23,6 +23,10 @@ skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, 
 - Every routine exercise must credit a tree node — the invariant is "0 orphans, 0 dead slots"
   (PLAN-GENERATOR.md §9.6). New slot exercises need a node whose id IS the exercise id. Node names
   must pack into 2 lines for the hex map; `skills-ext.test.ts` enforces it.
+- **`seed-plan.ts` is the verbatim PDF and is never edited for training numbers.** What the
+  app prescribes comes from `src/data/prescription.ts` (R-DYN 3×8 on strength progressions,
+  PDF doses on conditioning). Read the plan via `prescription.plan`, not `seedPlan.days`.
+- A criterion's `sets` is **enforced** — N qualifying sets in ONE session (doc 01 R-DYN).
 - Straight-arm pacing is **advisory by default** — warn, never block (PLAN.md "Tendon pacing").
 - Runs/swims have no home in the routine: `AthleteState.cardioLog` is the sole producer for the
   tree's `time`/`distance` nodes, via `src/data/locomotion-sources.ts` (explicit allowlist — a new

@@ -14,13 +14,15 @@ import { SECTORS, SECTOR_ORDER } from "../sectors";
 function criterionText(node: SkillNode, sex: Sex): string {
   const c = node.criterion;
   switch (c.kind) {
+    // `sets` is a real requirement now — criterionMet counts qualifying sets within ONE
+    // session (doc 01 R-DYN: "3 sets x 8 clean reps in one session"), so it is displayed.
     case "hold":
-      return `${c.sets ? `${c.sets}×` : ""}${c.seconds}s hold`;
+      return `${c.sets && c.sets > 1 ? `${c.sets} sets × ` : ""}${c.seconds}s hold`;
     case "reps":
-      return `${c.sets ? `${c.sets}×` : ""}${c.reps} reps${c.perSide ? "/side" : ""}`;
+      return `${c.sets && c.sets > 1 ? `${c.sets} sets × ` : ""}${c.reps} reps${c.perSide ? "/side" : ""}, one session`;
     case "weighted-reps": {
       const r = effectiveBwRatio(node.id, c.bwRatio, sex);
-      return `${c.sets ? `${c.sets}×` : ""}${c.reps} reps @ +${Math.round(r * 100)}% BW`;
+      return `${c.sets && c.sets > 1 ? `${c.sets} sets × ` : ""}${c.reps} reps @ +${Math.round(r * 100)}% BW`;
     }
     case "e1rm-ratio": {
       const r = effectiveBwRatio(node.id, c.bwRatio, sex);

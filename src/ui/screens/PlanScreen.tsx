@@ -1,6 +1,7 @@
 import { useRef, useState } from "react";
 import type { DayId, Slot } from "../../lib/types";
-import { seedPlan, authorQuestions } from "../../data/seed-plan";
+import { authorQuestions } from "../../data/seed-plan";
+import { plan as prescribedPlan } from "../../data/prescription";
 import { exercises } from "../../data/exercises";
 import { useApp, updateAthlete, updateAthleteState } from "../../lib/useAppData";
 import { exportJson, importJson, save } from "../../lib/storage";
@@ -27,7 +28,7 @@ export default function PlanScreen() {
   const [htFt, setHtFt] = useState("");
   const [htIn, setHtIn] = useState("");
 
-  const slots = seedPlan.days[day];
+  const slots = prescribedPlan.days[day];
 
   function pickAlternative(baseId: string, altId: string | null) {
     updateAthleteState(store, (s) => {

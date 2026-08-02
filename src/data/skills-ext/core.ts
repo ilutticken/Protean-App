@@ -202,9 +202,9 @@ export const coreExt: SectorExtension = {
       evidence: "D",
       description: "20 alternating elbow-to-knee reps. Seed exercise (legs-09).",
     }),
-    node("core.lying_leg_flutter", "Lying Leg Flutter", SECTOR, -1, hold(30, 3), ["core.lying_leg_raise"], {
+    node("core.lying_leg_flutter", "Lying Leg Flutter", SECTOR, -1, reps(50, 2), ["core.lying_leg_raise"], {
       evidence: "D",
-      description: "3×30 s of small alternating leg flutters with the low back pinned down. Seed exercise (legs-10).",
+      description: "2×50 alternating flutter kicks with the low back pinned down — legs-10 counts reps, and its band-2 target is 50. (Authored as a 30 s hold at first, which legs-10 could never satisfy: the slot logs reps.)",
     }),
     node("power.medball_slam", "Medicine Ball Slam", SECTOR, -0.7, reps(10, 3), ["core.x_up"], {
       evidence: "D",

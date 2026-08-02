@@ -12,10 +12,11 @@ import type {
   TestResult,
 } from "./types";
 import { seedPlan } from "../data/seed-plan";
+import { plan } from "../data/prescription";
 import { exercises, standardsKeyByExercise, type StandardsLiftKey } from "../data/exercises";
 import { skills } from "../data/skills";
 import { skillExerciseAlias } from "../data/skill-exercise-alias";
-import { computeSkillStatuses, sectorCompletion, type ExerciseBest } from "./skilltree";
+import { computeSkillStatuses, sectorCompletion, type ExerciseBest, type SessionSets } from "./skilltree";
 import { locomotionBestFrom } from "./locomotion";
 import { e1rm, bwExerciseLoad, standardsLevel, type StandardsLevelResult } from "./strength";
 import { radarAnchorsBySex } from "../data/norms";
@@ -27,8 +28,9 @@ import { localISODate } from "./dates";
 // ---------------------------------------------------------------------------
 // Plan helpers
 
+/** Keyed off the PRESCRIBED plan (prescription.ts), not the raw PDF transcription. */
 export const slotById: Record<string, Slot> = {};
-for (const day of Object.values(seedPlan.days)) {
+for (const day of Object.values(plan.days)) {
   for (const slot of day) slotById[slot.id] = slot;
 }
 
@@ -61,6 +63,7 @@ export function bestByExercise(
   athleteId: string,
 ): Record<string, ExerciseBest> {
   const out: Record<string, ExerciseBest> = {};
+  const sessionKeys: Record<string, Map<string, SessionSets>> = {};
   const bump = (id: string, patch: Partial<ExerciseBest>) => {
     const b = (out[id] ??= {});
     if (patch.maxRepsPerSet !== undefined)
@@ -80,23 +83,52 @@ export function bestByExercise(
     kept.push({ reps, weightKg });
     b.weightedSetBests = kept.slice(-12);
   };
+  // Per-session set values: a criterion's `sets` is a real requirement (doc 01 R-DYN,
+  // "3 sets x 8 in ONE session"), so the engine needs sets grouped by session, not just
+  // all-time maxima.
+  const session = (id: string, sessionKey: string): SessionSets => {
+    const b = (out[id] ??= {});
+    const list = (b.sessions ??= []);
+    const seen = (sessionKeys[id] ??= new Map<string, SessionSets>());
+    let rec = seen.get(sessionKey);
+    if (!rec) {
+      rec = { reps: [], holds: [], pairs: [] };
+      seen.set(sessionKey, rec);
+      list.push(rec);
+    }
+    return rec;
+  };
+
   for (const s of athleteSessions(sessions, athleteId)) {
     for (const e of s.entries) {
       const slot = slotById[e.slotId];
       const hold = isHoldSlot(slot);
+      const rec = session(e.exerciseId, s.id);
       for (const set of e.sets) {
-        if (hold) bump(e.exerciseId, { maxHoldSec: set.value });
-        else bump(e.exerciseId, { maxRepsPerSet: set.value });
+        if (hold) {
+          bump(e.exerciseId, { maxHoldSec: set.value });
+          rec.holds.push(set.value);
+        } else {
+          bump(e.exerciseId, { maxRepsPerSet: set.value });
+          rec.reps.push(set.value);
+        }
         if (set.weightKg !== undefined) {
           bump(e.exerciseId, { maxWeightKg: set.weightKg });
-          if (!hold) pair(e.exerciseId, set.value, set.weightKg);
+          if (!hold) {
+            pair(e.exerciseId, set.value, set.weightKg);
+            rec.pairs.push({ reps: set.value, weightKg: set.weightKg });
+          }
         }
       }
     }
   }
+  // Quick-logged lifts group by DATE — several entries on one day are one testing session.
   for (const l of state.liftLog ?? []) {
     bump(l.exerciseId, { maxRepsPerSet: l.reps, maxWeightKg: l.weightKg });
     pair(l.exerciseId, l.reps, l.weightKg);
+    const rec = session(l.exerciseId, `lift:${l.date}`);
+    rec.reps.push(l.reps);
+    rec.pairs.push({ reps: l.reps, weightKg: l.weightKg });
   }
   // Republish source bests (weightedSetBests pairs included) under the aliased skill-node
   // ids so on-ramp rungs auto-achieve — skilltree.criterionMet keys on node.id, and these

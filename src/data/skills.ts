@@ -10,6 +10,7 @@
 import type { Criterion, EvidenceTier, Sector, SkillNode } from "../lib/types";
 import type { SectorExtension } from "./skill-helpers";
 import { sectorExtensions } from "./skills-ext";
+import { RDYN_SETS, rdynRepsByExercise } from "./prescription";
 
 // ---------------------------------------------------------------------------
 // Local criterion constructors (plain-data helpers, not exported).
@@ -902,6 +903,24 @@ function buildSkills(list: SkillNode[], extensions: SectorExtension[]): Record<s
     const n = out[id];
     const shift = minRing[n.sector] ?? 0;
     if (shift !== 0) out[id] = { ...n, ring: n.ring - shift };
+  }
+  // Bring rep criteria into agreement with what the plan actually prescribes. The routine
+  // now advances a progression at 3x8 (prescription.ts, doc 01 R-DYN), so a node asking for
+  // more reps than the plan will ever prescribe could never be reached by training it —
+  // which is exactly the "the stunt chart and the workout disagree" complaint.
+  //
+  // Only LOWERED, never raised: a node whose criterion is already <= 8 is a genuine skill
+  // standard from doc 01's tables (planche push-up 3x3, HSPU 3x5) and the plan simply
+  // overshoots it. Raising those to 8 would invent difficulty the corpus does not support.
+  for (const id of Object.keys(out)) {
+    const n = out[id];
+    const target = rdynRepsByExercise[id];
+    if (target === undefined || n.criterion.kind !== "reps") continue;
+    // reps > target -> lower it; reps === target -> still align the SET COUNT, or the
+    // card reads "2 sets x 8" while the plan prescribes 3. reps < target is a genuine
+    // skill standard from doc 01 (planche push-up 3x3) and keeps both numbers.
+    if (n.criterion.reps < target) continue;
+    out[id] = { ...n, criterion: { ...n.criterion, reps: target, sets: RDYN_SETS } };
   }
   return out;
 }

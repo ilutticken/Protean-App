@@ -1,6 +1,7 @@
 import { useMemo, useState } from "react";
 import type { ChainStep, DayId, EntryLog, SessionLog, SetLog, Slot } from "../../lib/types";
 import { seedPlan } from "../../data/seed-plan";
+import { plan as prescribedPlan } from "../../data/prescription";
 import { exercises } from "../../data/exercises";
 import { useApp, updateAthleteState } from "../../lib/useAppData";
 import { applySession, ghost, restSuggestion, targetFor, type ProgressionEvent } from "../../lib/progression";
@@ -26,7 +27,7 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
 
   const slots = useMemo(() => {
     if (dayId === "mobility") return [];
-    const all = seedPlan.days[dayId];
+    const all = prescribedPlan.days[dayId];
     return all.filter((s) => {
       if (!s.alternativeTo) {
         // hidden when the athlete picked its alternative

@@ -1,5 +1,5 @@
 import type { AppData, ArchivedAthlete, Athlete, AthleteState, SessionLog, Slot, TestResult } from "./types";
-import { seedPlan } from "../data/seed-plan";
+import { plan } from "../data/prescription";
 import { stampAllSlotStates } from "./slot-identity";
 import { localISODate } from "./dates";
 
@@ -22,7 +22,7 @@ const KEY = "protean-data-v1";
 export const SCHEMA_VERSION = 2;
 
 const slotsById: Record<string, Slot> = {};
-for (const day of Object.values(seedPlan.days)) {
+for (const day of Object.values(plan.days)) {
   for (const slot of day) slotsById[slot.id] = slot;
 }
 

@@ -227,7 +227,8 @@ describe("sessionCredit end-to-end against real statuses", () => {
     stepIndex: 0,
     exerciseId,
     repBand: 1,
-    sets: [{ value }, { value }],
+    // Three sets — criterion `sets` is enforced now (doc 01 R-DYN).
+    sets: [{ value }, { value }, { value }],
   });
 
   it("credits the conditioning work a real Legs session logs", () => {

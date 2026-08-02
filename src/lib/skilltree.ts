@@ -8,6 +8,16 @@ import type { Sector, Sex, SkillNode, SkillProgress, SkillStatus } from "./types
 import { femaleBwRatioOverride, locomotionTimeBySex } from "../data/skills";
 
 /** Best logged results toward criteria, aggregated per canonical exercise/node id. */
+/** One session's set values for a single exercise. */
+export interface SessionSets {
+  /** Set values from rep-counted slots. */
+  reps: number[];
+  /** Set values (seconds) from hold slots. */
+  holds: number[];
+  /** (reps, added kg) pairs from the same set. */
+  pairs: { reps: number; weightKg: number }[];
+}
+
 export interface ExerciseBest {
   maxReps?: number;
   maxRepsPerSet?: number;
@@ -17,6 +27,12 @@ export interface ExerciseBest {
   /** Pareto frontier of (reps, weightKg) achieved in the SAME set — weighted
    * criteria must never combine a heavy single with a separate high-rep set. */
   weightedSetBests?: { reps: number; weightKg: number }[];
+  /**
+   * Per-session set values, needed because a criterion's `sets` is a real requirement:
+   * doc 01 rule R-DYN is "3 sets x 8 clean reps IN ONE SESSION". Absent for data logged
+   * before this was tracked, in which case criterionMet falls back to the best single set.
+   */
+  sessions?: SessionSets[];
 }
 
 export interface SkillTreeInput {
@@ -54,21 +70,47 @@ export function effectiveBwRatio(nodeId: string, bwRatio: number, sex: Sex): num
   return bwRatio;
 }
 
+/**
+ * Did ANY single session contain `need` sets at or above `threshold`?
+ * A criterion's `sets` is a requirement, not decoration — doc 01 R-DYN is "3 sets x 8 clean
+ * reps in one session", and three hard sets on three different days is not the same claim.
+ */
+function countsInOneSession(
+  sessions: SessionSets[],
+  pick: (s: SessionSets) => number[],
+  threshold: number,
+  need: number,
+): boolean {
+  return sessions.some((s) => pick(s).filter((v) => v >= threshold).length >= need);
+}
+
 // True when logged data satisfies the node's criterion (doc 01 §6 unlock criteria).
 // Attested criteria never auto-satisfy (addendum-1 §0 NO_AUTO_UNLOCK).
 function criterionMet(node: SkillNode, input: SkillTreeInput): boolean {
   const c = node.criterion;
   const b = input.bestByExercise[node.id];
   switch (c.kind) {
-    case "hold":
-      return (b?.maxHoldSec ?? 0) >= c.seconds;
-    case "reps":
+    case "hold": {
+      const need = c.sets ?? 1;
+      if (b?.sessions) return countsInOneSession(b.sessions, (x) => x.holds, c.seconds, need);
+      return (b?.maxHoldSec ?? 0) >= c.seconds; // legacy data: best single set only
+    }
+    case "reps": {
+      const need = c.sets ?? 1;
+      if (b?.sessions) return countsInOneSession(b.sessions, (x) => x.reps, c.reps, need);
       return (b?.maxRepsPerSet ?? b?.maxReps ?? 0) >= c.reps;
+    }
     case "weighted-reps": {
       const ratio = effectiveBwRatio(node.id, c.bwRatio, input.sex);
       const needKg = ratio * input.bodyweightKg;
       // Same-set pairs when available (review finding #15); the legacy independent-
       // maxima check remains only as a fallback for data logged before pairs existed.
+      const needSets = c.sets ?? 1;
+      if (b?.sessions) {
+        return b.sessions.some(
+          (s2) => s2.pairs.filter((p) => p.weightKg >= needKg && p.reps >= c.reps).length >= needSets,
+        );
+      }
       if (b?.weightedSetBests?.length) {
         return b.weightedSetBests.some((p) => p.weightKg >= needKg && p.reps >= c.reps);
       }

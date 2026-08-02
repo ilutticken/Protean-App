@@ -197,7 +197,9 @@ const pullSession = (exerciseId: string, value: number, weightKg?: number): Sess
       stepIndex: 2,
       exerciseId,
       repBand: 1,
-      sets: [{ value, ...(weightKg === undefined ? {} : { weightKg }) }],
+      // Three sets: a criterion's `sets` is enforced (doc 01 R-DYN, "3 sets x 8 clean
+      // reps in one session"), so a one-set fixture no longer models a real session.
+      sets: Array.from({ length: 3 }, () => ({ value, ...(weightKg === undefined ? {} : { weightKg }) })),
     },
   ],
 });
