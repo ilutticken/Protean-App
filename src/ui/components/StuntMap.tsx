@@ -51,11 +51,11 @@ export default function StuntMap({
   /** CSS pixels per world unit at the current zoom. */
   const pxPerWorld = (svgPx / B.w) * view.k;
   /**
-   * Zoom at which a LABEL_FONT label renders ~10 px — the least zoom that is still
-   * readable, so the most context fits on screen. (Going bigger shows ~3 nodes on a
-   * phone; smaller and the names blur.)
+   * Zoom at which a LABEL_FONT label renders ~11 px — labels live inside the cells,
+   * so this is also the zoom at which a hex is ~100 px wide (≈4 across a phone,
+   * the same reading density as the printed reference chart).
    */
-  const readableK = clampK((0.72 * B.w) / Math.max(svgPx, 1));
+  const readableK = clampK((1.0 * B.w) / Math.max(svgPx, 1));
 
   function clientToLocal(e: { clientX: number; clientY: number }) {
     const r = svgRef.current!.getBoundingClientRect();
@@ -150,7 +150,7 @@ export default function StuntMap({
   }
 
   // Labels are sized in world units, so visibility depends on their SCREEN size (LOD).
-  const showLabels = LABEL_FONT * pxPerWorld >= 8.5;
+  const showLabels = LABEL_FONT * pxPerWorld >= 8;
   // Keep strokes ~constant on screen without vanishing when zoomed out to fit.
   const strokeWorld = Math.min(9, Math.max(1.5, 1.8 / Math.max(pxPerWorld, 0.001)));
 
@@ -195,18 +195,21 @@ export default function StuntMap({
           onWheel={onWheel}
         >
           <g transform={`translate(${view.x},${view.y}) scale(${view.k})`}>
-            {/* edges */}
-            {layout.edges.map((e) => (
+            {/* Non-adjacent prereq links only. Hidden at overview zoom (where they
+                read as crosshatch over the honeycomb) unless the prereq is achieved. */}
+            {layout.edges
+              .filter((e) => showLabels || e.lit)
+              .map((e) => (
               <path
                 key={e.key}
                 d={e.d}
                 fill="none"
                 stroke={e.color}
-                strokeWidth={strokeWorld * 0.8}
-                strokeDasharray={e.cross ? `${strokeWorld * 3} ${strokeWorld * 2.5}` : undefined}
-                opacity={e.lit ? 0.95 : 0.4}
-              />
-            ))}
+                  strokeWidth={strokeWorld * 0.7}
+                  strokeDasharray={e.cross ? `${strokeWorld * 3} ${strokeWorld * 2.5}` : undefined}
+                  opacity={e.lit ? 0.9 : 0.22}
+                />
+              ))}
             {/* center figure */}
             <CenterFigure cx={SIZE / 2} cy={SIZE / 2} />
             {/* nodes */}
@@ -241,97 +244,127 @@ interface Placed {
   x: number;
   y: number;
   hex: string;
+  /** axial lattice coords — used to detect neighbouring cells */
+  q: number;
+  r: number;
 }
 
-// Layout constants (world units). NODE_ARC is the tangential space each node needs
-// so neither hexes NOR their labels collide; RING_GAP is the radial equivalent.
-const R0 = 200; // first ring radius (leaves room for the centre figure)
-const NODE_ARC = 112;
-const RING_GAP = 104;
-const STAGGER = 30; // radial zig-zag applied to crowded rings
-export const LABEL_FONT = 14; // world units; LOD hides labels when this is sub-pixel
-const WEDGE_MARGIN_DEG = 3;
-const MIN_WEDGE_DEG = 16;
+/** Axial hex distance; 1 means the two cells share an edge. */
+function axialDistance(a: Placed, b: Placed): number {
+  const dq = a.q - b.q;
+  const dr = a.r - b.r;
+  return (Math.abs(dq) + Math.abs(dq + dr) + Math.abs(dr)) / 2;
+}
+
+// Honeycomb constants (world units). Nodes occupy cells of a real hex lattice, so
+// neighbours tessellate the way the KNightNox reference chart does.
+export const HEX_R = 52; // circumradius of a lattice cell
+const HEX_INSET = 2.5; // drawn smaller than the cell -> 2px-style surface gap
+const CENTER_RINGS = 1; // lattice rings 0..1 reserved for the central figure
+export const LABEL_FONT = 10.5; // world units; label sits INSIDE the hex
+
+/** Flat-top axial hex -> cartesian. */
+function axialToXY(q: number, r: number): { x: number; y: number } {
+  return { x: 1.5 * HEX_R * q, y: Math.sqrt(3) * HEX_R * (r + q / 2) };
+}
+
+/** The 6k cells of lattice ring k (k=0 -> the single centre cell). */
+function hexRing(k: number): [number, number][] {
+  if (k === 0) return [[0, 0]];
+  const dirs: [number, number][] = [
+    [1, 0],
+    [0, 1],
+    [-1, 1],
+    [-1, 0],
+    [0, -1],
+    [1, -1],
+  ];
+  let [q, r] = [dirs[4][0] * k, dirs[4][1] * k];
+  const out: [number, number][] = [];
+  for (let i = 0; i < 6; i++) {
+    for (let j = 0; j < k; j++) {
+      out.push([q, r]);
+      q += dirs[i][0];
+      r += dirs[i][1];
+    }
+  }
+  return out;
+}
 
 /**
- * Radial wedge layout with three anti-overlap mechanisms:
- *  1. wedge width is allocated per sector in proportion to its widest ring, so a
- *     52-node sector is not squeezed into the same 40° as a 10-node one;
- *  2. each ring's radius grows to whatever the arc needs (count × NODE_ARC), so a
- *     crowded ring pushes outward instead of overlapping;
- *  3. crowded rings zig-zag radially, halving the arc each node needs.
+ * Honeycomb layout. Each sector owns a contiguous angular slice of the lattice sized
+ * in proportion to its node count; its nodes fill that slice's cells ring by ring,
+ * ordered shallow -> deep, so progressions radiate outward while cells stay packed
+ * edge-to-edge. Labels live INSIDE the cells, so nothing can collide by construction.
  */
 function computeLayout(nodes: MapNode[]) {
   const bySector = new Map<Sector, MapNode[]>();
   for (const s of SECTOR_ORDER) bySector.set(s, []);
   for (const n of nodes) bySector.get(n.node.sector)?.push(n);
 
-  // Ring buckets per sector, plus each sector's angular "demand" (its widest ring).
-  const ringsBySector = new Map<Sector, Map<number, MapNode[]>>();
-  const demand = new Map<Sector, number>();
+  // Angular slice per sector, proportional to how many cells it needs.
+  const total = nodes.length || 1;
+  const range = new Map<Sector, [number, number]>();
+  let cursor = -90;
   for (const sec of SECTOR_ORDER) {
-    const rings = new Map<number, MapNode[]>();
-    for (const n of bySector.get(sec)!) {
-      const r = n.node.ring;
-      if (!rings.has(r)) rings.set(r, []);
-      rings.get(r)!.push(n);
-    }
-    ringsBySector.set(sec, rings);
-    let widest = 1;
-    for (const members of rings.values()) {
-      widest = Math.max(widest, members.length > 4 ? members.length / 2 : members.length);
-    }
-    demand.set(sec, Math.max(widest, 1));
+    const share = (360 * (bySector.get(sec)!.length || 1)) / total;
+    range.set(sec, [cursor, cursor + share]);
+    cursor += share;
   }
+  const norm = (deg: number): number => ((deg + 90) % 360 + 360) % 360;
+  const sectorOf = (deg: number): Sector => {
+    const d = norm(deg);
+    for (const sec of SECTOR_ORDER) {
+      const [a0, a1] = range.get(sec)!;
+      if (d >= norm(a0) - 1e-9 && d < norm(a0) + (a1 - a0) - 1e-9) return sec;
+    }
+    return SECTOR_ORDER[SECTOR_ORDER.length - 1];
+  };
 
-  // Proportional wedge allocation (with a floor so thin sectors stay clickable).
-  const totalDemand = SECTOR_ORDER.reduce((s, sec) => s + demand.get(sec)!, 0);
-  const floorTotal = MIN_WEDGE_DEG * SECTOR_ORDER.length;
-  const flexible = 360 - floorTotal;
-  const wedgeDeg = new Map<Sector, number>();
-  for (const sec of SECTOR_ORDER) {
-    wedgeDeg.set(sec, MIN_WEDGE_DEG + (flexible * demand.get(sec)!) / totalDemand);
+  // Bucket lattice cells by sector, walking outward. Stop once every sector is fed.
+  const cellsBySector = new Map<Sector, { q: number; r: number; k: number; ang: number }[]>();
+  for (const s of SECTOR_ORDER) cellsBySector.set(s, []);
+  const needed = new Map<Sector, number>(SECTOR_ORDER.map((s) => [s, bySector.get(s)!.length]));
+  for (let k = CENTER_RINGS + 1; k <= 60; k++) {
+    for (const [q, r] of hexRing(k)) {
+      const { x, y } = axialToXY(q, r);
+      const ang = (Math.atan2(y, x) * 180) / Math.PI;
+      cellsBySector.get(sectorOf(ang))!.push({ q, r, k, ang });
+    }
+    if (SECTOR_ORDER.every((s) => cellsBySector.get(s)!.length >= (needed.get(s) ?? 0))) break;
   }
 
   const pos = new Map<string, Placed>();
-  let maxR = R0;
-  let angleCursor = -90;
+  let maxR = HEX_R * (CENTER_RINGS + 1);
 
   for (const sec of SECTOR_ORDER) {
     const hex = SECTORS[sec].hex;
-    const wedge = wedgeDeg.get(sec)!;
-    const a0 = angleCursor + WEDGE_MARGIN_DEG;
-    const a1 = angleCursor + wedge - WEDGE_MARGIN_DEG;
-    angleCursor += wedge;
-    const wedgeRad = Math.max(((a1 - a0) * Math.PI) / 180, 0.05);
+    const cells = cellsBySector
+      .get(sec)!
+      .sort((a, b) => a.k - b.k || a.ang - b.ang);
 
-    const rings = ringsBySector.get(sec)!;
-    const sortedRings = [...rings.keys()].sort((a, b) => a - b);
-    let prevRadius = R0 - RING_GAP;
-    let prevStaggered = false;
-
-    for (const ring of sortedRings) {
-      const members = rings.get(ring)!;
-      // order by mean placed-parent angle to reduce edge crossings
-      members.sort((m1, m2) => meanParentAngle(m1, pos, a0, a1) - meanParentAngle(m2, pos, a0, a1));
-
-      const staggered = members.length > 4;
-      const arcNeed = staggered ? NODE_ARC / 2 : NODE_ARC;
-      const gap = RING_GAP + (prevStaggered ? STAGGER : 0) + (staggered ? STAGGER : 0);
-      const radius = Math.max(prevRadius + gap, (members.length * arcNeed) / wedgeRad);
-
-      members.forEach((mn, i) => {
-        // inset endpoints by half a slot so neighbouring wedges never touch
-        const t = members.length === 1 ? 0.5 : (i + 0.5) / members.length;
-        const ang = (a0 + t * (a1 - a0)) * (Math.PI / 180);
-        const r = radius + (staggered ? (i % 2 === 0 ? -STAGGER : STAGGER) : 0);
-        maxR = Math.max(maxR, r);
-        pos.set(mn.node.id, { mn, x: r * Math.cos(ang), y: r * Math.sin(ang), hex });
+    // Shallow -> deep; within a depth, keep chains together by following the
+    // already-placed parents' angular order.
+    const members = bySector.get(sec)!;
+    const depths = [...new Set(members.map((m) => m.node.ring))].sort((a, b) => a - b);
+    const angleIndex = new Map<string, number>();
+    const ordered: MapNode[] = [];
+    for (const d of depths) {
+      const group = members
+        .filter((m) => m.node.ring === d)
+        .sort((m1, m2) => parentOrder(m1, angleIndex) - parentOrder(m2, angleIndex));
+      group.forEach((m) => {
+        angleIndex.set(m.node.id, ordered.length);
+        ordered.push(m);
       });
-
-      prevRadius = radius;
-      prevStaggered = staggered;
     }
+
+    ordered.forEach((mn, i) => {
+      const cell = cells[Math.min(i, cells.length - 1)];
+      const { x, y } = axialToXY(cell.q, cell.r);
+      maxR = Math.max(maxR, Math.hypot(x, y));
+      pos.set(mn.node.id, { mn, x, y, hex, q: cell.q, r: cell.r });
+    });
   }
 
   const size = (maxR + 140) * 2;
@@ -362,6 +395,8 @@ function computeLayout(nodes: MapNode[]) {
     for (const pre of p.mn.node.prereqs) {
       const q = pos.get(pre);
       if (!q) continue;
+      // Touching cells already read as connected — drawing a line would be noise.
+      if (axialDistance(p, q) <= 1) continue;
       const mx = (p.x + q.x) / 2;
       const my = (p.y + q.y) / 2;
       // bow slightly outward from center
@@ -418,12 +453,11 @@ function computeLayout(nodes: MapNode[]) {
   return { placed: [...pos.values()], edges, size, maxR, bounds, sectorBox, sectorEntry };
 }
 
-function meanParentAngle(mn: MapNode, pos: Map<string, Placed>, a0: number, a1: number): number {
-  const parents = mn.node.prereqs.map((p) => pos.get(p)).filter(Boolean) as Placed[];
-  if (!parents.length) return (a0 + a1) / 2;
-  return (
-    parents.reduce((s, p) => s + Math.atan2(p.y, p.x), 0) / parents.length
-  );
+/** Mean placement index of a node's already-ordered parents (crossing reduction). */
+function parentOrder(mn: MapNode, angleIndex: Map<string, number>): number {
+  const seen = mn.node.prereqs.map((p) => angleIndex.get(p)).filter((v): v is number => v !== undefined);
+  if (!seen.length) return Number.MAX_SAFE_INTEGER; // unparented -> after the chained ones
+  return seen.reduce((s, v) => s + v, 0) / seen.length;
 }
 
 function hexPath(cx: number, cy: number, r: number): string {
@@ -450,10 +484,17 @@ function NodeGlyph({
 }) {
   const { status } = p.mn;
   const { isStunt } = p.mn.node;
-  const r = isStunt ? 26 : 20;
+  const r = HEX_R - HEX_INSET;
   const locked = status === "locked";
   const achieved = status === "achieved";
   const inProgress = status === "in-progress";
+  const lines = labelLines(p.mn.node.name);
+  // Text sits on the fill when achieved, so flip to the dark ink for contrast.
+  const textFill = achieved
+    ? "var(--color-surface-0)"
+    : locked
+      ? "var(--color-ink-3)"
+      : "var(--color-ink-1)";
 
   return (
     <g
@@ -463,28 +504,23 @@ function NodeGlyph({
       onPointerUp={onTap}
       style={{ cursor: "pointer" }}
     >
-      {/* invisible >=44px hit circle */}
-      <circle cx={p.x} cy={p.y} r={Math.max(24, r + 6)} fill="transparent" />
+      {/* hit target: the whole cell */}
+      <circle cx={p.x} cy={p.y} r={r} fill="transparent" />
       <path
         d={hexPath(p.x, p.y, r)}
         fill={
           achieved
             ? p.hex
             : inProgress
-              ? `color-mix(in oklab, ${p.hex} 38%, var(--color-surface-1))`
-              : "var(--color-surface-1)"
+              ? `color-mix(in oklab, ${p.hex} 34%, var(--color-surface-1))`
+              : `color-mix(in oklab, ${p.hex} 9%, var(--color-surface-1))`
         }
         stroke={p.hex}
-        strokeWidth={strokeWorld * (isStunt ? 1.6 : 1.1)}
+        strokeWidth={Math.min(strokeWorld, 4) * (isStunt ? 1.7 : 1)}
+        strokeOpacity={locked ? 0.55 : 1}
       />
-      {isStunt && !locked && (
-        <path
-          d={hexPath(p.x, p.y, r + 6)}
-          fill="none"
-          stroke={p.hex}
-          strokeWidth={strokeWorld * 0.6}
-          opacity="0.5"
-        />
+      {inProgress && (
+        <path d={hexPath(p.x, p.y, r)} fill="none" stroke={p.hex} strokeWidth={strokeWorld * 0.5} opacity="0.5" />
       )}
       {inProgress && p.mn.pct > 0 && (
         <ProgressRing
@@ -496,34 +532,43 @@ function NodeGlyph({
           width={strokeWorld * 1.3}
         />
       )}
-      {achieved && (
-        <path
-          d={`M${p.x - 8},${p.y + 1} l5.5,6 l10,-13`}
-          fill="none"
-          stroke="var(--color-surface-0)"
-          strokeWidth={Math.max(3, strokeWorld * 1.6)}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      )}
       {showLabel &&
-        labelLines(p.mn.node.name).map((line, li) => (
+        lines.map((line, li) => (
           <text
             key={li}
             x={p.x}
-            y={p.y + r + fontSize + 2 + li * (fontSize + 1)}
+            // vertically centre the block, leaving room for the status glyph below
+            y={p.y - (lines.length - 1) * (fontSize * 0.6) + li * (fontSize + 1.5) - 3}
             textAnchor="middle"
             fontSize={fontSize}
-            fill={locked ? "var(--color-ink-3)" : "var(--color-ink-1)"}
+            fill={textFill}
             fontWeight={isStunt ? 700 : 500}
-            stroke="var(--color-surface-1)"
-            strokeWidth="3.5"
-            paintOrder="stroke"
-            strokeLinejoin="round"
           >
             {line}
           </text>
         ))}
+      {achieved && (
+        <path
+          d={`M${p.x - 7},${p.y + fontSize * 1.9} l4.5,5 l9,-11`}
+          fill="none"
+          stroke="var(--color-surface-0)"
+          strokeWidth="3"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      )}
+      {isStunt && !achieved && showLabel && (
+        <text
+          x={p.x}
+          y={p.y + fontSize * 2.3}
+          textAnchor="middle"
+          fontSize={fontSize * 0.85}
+          fill={p.hex}
+          fontWeight="700"
+        >
+          ★
+        </text>
+      )}
     </g>
   );
 }
@@ -576,7 +621,9 @@ function CenterFigure({ cx, cy }: { cx: number; cy: number }) {
  * silently dropping trailing words made distinct skills read identically.
  */
 export function labelLines(name: string): string[] {
-  const MAX = 15;
+  // A hexagon narrows away from its centre line, so the budget is tighter than the
+  // full flat-to-flat width would suggest.
+  const MAX = 12;
   const MAX_LINES = 3;
   if (name.length <= MAX) return [name];
 
