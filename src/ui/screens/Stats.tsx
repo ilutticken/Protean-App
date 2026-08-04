@@ -11,6 +11,10 @@ import {
 import { radar, AXIS_LABELS, AXIS_ORDER } from "../../lib/scoring";
 import { cardioSummary, formatDuration, formatMeters } from "../../lib/locomotion";
 import { goalRelevantIds, goalRelevantSetRate } from "../../lib/goal";
+import { deleteSession, deleteSet, updateSet } from "../../lib/history";
+import { athleteSessions } from "../../lib/selectors";
+import { exercises } from "../../data/exercises";
+import { skills } from "../../data/skills";
 import { relativeStrength } from "../../lib/strength";
 import { tests as testDefs } from "../../data/norms";
 import { STANDARDS_LEVEL_NAMES, STANDARDS_PULLED_DATE, type LiftKey } from "../../data/standards";
@@ -20,7 +24,7 @@ import Heatmap from "../components/Heatmap";
 import RadarChart from "../components/RadarChart";
 import BottomSheet from "../components/BottomSheet";
 
-type StatsTab = "lifts" | "volume" | "domains";
+type StatsTab = "lifts" | "volume" | "history" | "domains";
 
 /** Radar-fitting short labels; full names stay in the table below the chart. */
 const SHORT_AXIS: Record<string, string> = {
@@ -64,6 +68,9 @@ const TESTABLE_LIFTS: { exerciseId: string; label: string }[] = [
   { exerciseId: "barbell.overhead_squat", label: "Overhead Squat" },
   { exerciseId: "barbell.zercher_squat", label: "Zercher Squat" },
   { exerciseId: "barbell.clean_and_jerk", label: "Clean & Jerk" },
+  { exerciseId: "barbell.power_clean", label: "Power Clean" },
+  { exerciseId: "barbell.clean_and_press", label: "Clean & Press" },
+  { exerciseId: "barbell.snatch", label: "Snatch (full)" },
   { exerciseId: "barbell.power_snatch", label: "Power Snatch" },
   { exerciseId: "barbell.snatch_balance", label: "Snatch Balance" },
   { exerciseId: "barbell.sots_press", label: "Sots Press" },
@@ -99,7 +106,7 @@ export default function Stats() {
   return (
     <div className="flex flex-col gap-4">
       <div className="flex gap-1.5">
-        {(["lifts", "volume", "domains"] as StatsTab[]).map((t) => (
+        {(["lifts", "volume", "history", "domains"] as StatsTab[]).map((t) => (
           <button
             key={t}
             onClick={() => setTab(t)}
@@ -131,6 +138,7 @@ export default function Stats() {
           <Heatmap values={heatmapValues(data.sessions, athlete.id)} color={athlete.accent} />
         </section>
       )}
+      {tab === "history" && <HistoryTab />}
       {tab === "domains" && <DomainsTab />}
       <p className="text-ink-3 text-[10px]">
         Standards: strengthlevel.com tables pulled {STANDARDS_PULLED_DATE}; e1RM = Brzycki/Epley hybrid, reps ≤ 10
@@ -589,5 +597,202 @@ function TestEntrySheet({ open, onClose }: { open: boolean; onClose: () => void 
         </button>
       </div>
     </BottomSheet>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// History — view and FIX the log. Every derived number recomputes from sessions,
+// so editing here corrects e1RM trends, skill credit and goal progress in one move.
+// Chain positions already advanced are deliberately not rewound (see lib/history.ts).
+
+function HistoryTab() {
+  const store = useApp();
+  const { data, athlete, athleteState } = store;
+  const [confirmDelete, setConfirmDelete] = useState<string | null>(null);
+
+  const sessions = useMemo(
+    () => [...athleteSessions(data.sessions, athlete.id)].reverse(),
+    [data.sessions, athlete.id],
+  );
+
+  const patchSessions = (fn: (s: typeof data.sessions) => typeof data.sessions) =>
+    store.update((d) => ({ ...d, sessions: fn(d.sessions) }));
+
+  const quick: { key: "liftLog" | "cardioLog" | "skillLog"; title: string; rows: string[] }[] = [
+    {
+      key: "liftLog",
+      title: "Lift tests",
+      rows: (athleteState.liftLog ?? []).map(
+        (l) => `${l.date} · ${exercises[l.exerciseId]?.name ?? l.exerciseId} — ${l.weightKg} kg × ${l.reps}`,
+      ),
+    },
+    {
+      key: "cardioLog",
+      title: "Cardio",
+      rows: (athleteState.cardioLog ?? []).map(
+        (c) => `${c.date} · ${c.modality} ${formatMeters(c.meters)}${c.seconds ? ` in ${formatDuration(c.seconds)}` : ""}`,
+      ),
+    },
+    {
+      key: "skillLog",
+      title: "Skill practice",
+      rows: (athleteState.skillLog ?? []).map(
+        (p) => `${p.date} · ${skills[p.nodeId]?.name ?? p.nodeId} — ${p.value}${skills[p.nodeId]?.criterion.kind === "hold" ? " s" : " reps"}${p.weightKg ? ` @ +${p.weightKg} kg` : ""}`,
+      ),
+    },
+  ];
+
+  function deleteQuick(key: "liftLog" | "cardioLog" | "skillLog", index: number) {
+    updateAthleteState(store, (s) => ({
+      ...s,
+      [key]: (s[key] ?? []).filter((_: unknown, i: number) => i !== index),
+    }));
+  }
+
+  return (
+    <div className="flex flex-col gap-3">
+      {sessions.length === 0 ? (
+        <section className="rounded-2xl bg-surface-1 border border-line p-6 text-center">
+          <p className="text-ink-2 text-sm">No sessions logged yet.</p>
+        </section>
+      ) : (
+        sessions.map((s) => (
+          <details key={s.id} className="rounded-2xl bg-surface-1 border border-line overflow-hidden">
+            <summary className="px-4 py-3 cursor-pointer text-sm flex items-baseline gap-2">
+              <span className="font-semibold capitalize">{s.dayId}</span>
+              <span className="text-ink-3 text-xs nums">{s.date}</span>
+              <span className="text-ink-3 text-xs nums ml-auto">
+                {s.entries.reduce((n, e) => n + e.sets.length, 0)} sets
+                {s.isoDone ? " · iso" : ""}
+              </span>
+            </summary>
+            <div className="px-4 pb-3 flex flex-col gap-2.5">
+              {s.entries.map((e, ei) => (
+                <div key={ei}>
+                  <div className="text-xs text-ink-2 mb-1">
+                    {exercises[e.exerciseId]?.name ?? e.exerciseId}
+                    <span className="text-ink-3"> · {e.slotId}</span>
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    {e.sets.map((set, si) => (
+                      <SetRow
+                        key={si}
+                        n={si + 1}
+                        value={set.value}
+                        weightKg={set.weightKg}
+                        onSave={(value, weightKg) =>
+                          patchSessions((all) => updateSet(all, s.id, ei, si, { value, weightKg: weightKg ?? null }))
+                        }
+                        onDelete={() => patchSessions((all) => deleteSet(all, s.id, ei, si))}
+                      />
+                    ))}
+                  </div>
+                </div>
+              ))}
+              {confirmDelete === s.id ? (
+                <button
+                  onClick={() => {
+                    patchSessions((all) => deleteSession(all, s.id));
+                    setConfirmDelete(null);
+                  }}
+                  className="rounded-lg border px-3 py-2 text-sm font-semibold text-danger border-danger"
+                >
+                  Tap again to delete this whole session
+                </button>
+              ) : (
+                <button
+                  onClick={() => setConfirmDelete(s.id)}
+                  className="rounded-lg border border-line px-3 py-2 text-sm text-ink-3"
+                >
+                  Delete session…
+                </button>
+              )}
+            </div>
+          </details>
+        ))
+      )}
+
+      {quick.map(
+        (q) =>
+          q.rows.length > 0 && (
+            <section key={q.key} className="rounded-2xl bg-surface-1 border border-line p-4">
+              <h2 className="font-semibold text-sm mb-2">{q.title}</h2>
+              <div className="flex flex-col gap-1">
+                {q.rows.map((row, i) => (
+                  <div key={i} className="flex items-center gap-2 text-sm">
+                    <span className="text-ink-2 truncate">{row}</span>
+                    <button
+                      onClick={() => deleteQuick(q.key, i)}
+                      className="ml-auto shrink-0 text-ink-3 text-xs border border-line rounded px-2 py-1"
+                      aria-label={`delete ${q.title} entry ${i + 1}`}
+                    >
+                      delete
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </section>
+          ),
+      )}
+
+      <p className="text-ink-3 text-[11px]">
+        Edits recompute every derived number — e1RM trends, skill credit, goal progress. Chain
+        positions already advanced are not rewound; use the step arrows in your next workout.
+      </p>
+    </div>
+  );
+}
+
+function SetRow({
+  n,
+  value,
+  weightKg,
+  onSave,
+  onDelete,
+}: {
+  n: number;
+  value: number;
+  weightKg?: number;
+  onSave: (value: number, weightKg?: number) => void;
+  onDelete: () => void;
+}) {
+  const [v, setV] = useState(String(value));
+  const [w, setW] = useState(weightKg !== undefined ? String(weightKg) : "");
+  const dirty = Number(v) !== value || (w === "" ? weightKg !== undefined : Number(w) !== weightKg);
+
+  return (
+    <div className="flex items-center gap-2">
+      <span className="text-ink-3 text-xs w-4 shrink-0 nums">{n}</span>
+      <input
+        className="w-20 rounded-lg bg-surface-2 border border-line px-2.5 py-1.5 text-sm nums outline-none focus:border-ink-3"
+        inputMode="decimal"
+        value={v}
+        onChange={(e) => setV(e.target.value.replace(/[^\d.]/g, ""))}
+        aria-label={`set ${n} value`}
+      />
+      <input
+        className="w-20 rounded-lg bg-surface-2 border border-line px-2.5 py-1.5 text-sm nums outline-none focus:border-ink-3"
+        inputMode="decimal"
+        placeholder="+kg"
+        value={w}
+        onChange={(e) => setW(e.target.value.replace(/[^\d.]/g, ""))}
+        aria-label={`set ${n} weight`}
+      />
+      {dirty && Number(v) > 0 && (
+        <button
+          onClick={() => onSave(Number(v), w === "" ? undefined : Number(w))}
+          className="rounded-lg px-3 py-1.5 text-sm font-semibold text-surface-0"
+          style={{ background: "var(--accent)" }}
+        >
+          Save
+        </button>
+      )}
+      <button
+        onClick={onDelete}
+        className="ml-auto text-ink-3 text-xs border border-line rounded px-2 py-1"
+      >
+        delete
+      </button>
+    </div>
   );
 }

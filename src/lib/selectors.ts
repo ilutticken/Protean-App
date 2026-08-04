@@ -264,8 +264,8 @@ export function e1rmByLiftForTree(
     const a = aggs[stdKey];
     if (a) out[treeKey] = a.e1rmKg;
   }
-  // weighted pull-up/dip aggregates are ADDED weight; tree ratio criteria for
-  // power_clean/clean_and_press/snatch have no producer yet (manual marking).
+  // Weighted pull-up/dip aggregates are ADDED weight and never feed ratio criteria
+  // here. Olympic milestones are weighted-reps (not e1RM) as of 2026-08-04.
   void bodyweightKg;
   return out;
 }

@@ -16,6 +16,16 @@ import { SECTORS } from "../sectors";
 import BottomSheet from "../components/BottomSheet";
 
 const DAYS: Exclude<DayId, "mobility">[] = ["legs", "pull", "push", "fullbody"];
+
+/**
+ * Author questions since RESOLVED by an athlete-directed decision. The questions stay
+ * in seed-plan.ts verbatim (it is the transcription record); this overlay is the
+ * decision log. Everything not listed here still runs on its seeded default.
+ */
+const RESOLVED_QUESTIONS: Record<string, string> = {
+  Q1: "Resolved 2026-08-02 — rep bands replaced by R-DYN (3 sets × 8) on strength slots; conditioning keeps its PDF doses. See PLAN.md \u201cRep prescription\u201d.",
+  Q3: "Resolved 2026-08-02 — R-DYN retired the 2×20: push-03 prescribes 3×8 and the planche push-up node keeps doc 01\u2019s 3×3.",
+};
 const DAY_LABEL: Record<string, string> = { legs: "Legs", pull: "Pull", push: "Push", fullbody: "Full Body" };
 
 export default function PlanScreen() {
@@ -90,11 +100,11 @@ export default function PlanScreen() {
 
       <button
         onClick={() => setQOpen(true)}
-        className="rounded-xl bg-surface-1 border border-line px-4 py-3 text-left text-sm"
+        className="rounded-xl bg-surface-1 border border-line px-4 py-2.5 text-left text-sm flex items-baseline gap-2"
       >
-        <span className="font-semibold">⚙️ 8 seeded defaults await your confirmation</span>
-        <span className="block text-ink-3 text-xs mt-0.5">
-          Week order, iso angles, unit conventions — shipped with research-backed defaults.
+        <span className="font-medium text-ink-2">⚙️ Seeded defaults &amp; decisions</span>
+        <span className="text-ink-3 text-xs nums">
+          {Object.keys(RESOLVED_QUESTIONS).length} resolved · {authorQuestions.length - Object.keys(RESOLVED_QUESTIONS).length} defaults in effect
         </span>
       </button>
 
@@ -295,18 +305,26 @@ export default function PlanScreen() {
       </section>
 
       <BottomSheet open={qOpen} onClose={() => setQOpen(false)}>
-        <h2 className="text-xl font-bold mb-1">Seeded defaults</h2>
+        <h2 className="text-xl font-bold mb-1">Seeded defaults &amp; decisions</h2>
         <p className="text-ink-2 text-sm mb-4">
-          The printable didn't specify these; the app ships evidence-based defaults. Adjust by
-          editing the seed in <span className="nums">src/data/seed-plan.ts</span>.
+          The printable didn't specify these. Some have since been settled by your decisions;
+          the rest run on evidence-based defaults (editable in{" "}
+          <span className="nums">src/data/seed-plan.ts</span>).
         </p>
         <div className="flex flex-col gap-3">
-          {authorQuestions.map((q) => (
-            <div key={q.id} className="rounded-xl bg-surface-1 border border-line p-3">
-              <div className="text-sm font-medium">{q.id.toUpperCase()} — {q.question}</div>
-              <div className="text-ink-2 text-xs mt-1">Default: {q.seedDefault}</div>
-            </div>
-          ))}
+          {authorQuestions.map((q) => {
+            const resolved = RESOLVED_QUESTIONS[q.id.toUpperCase()];
+            return (
+              <div key={q.id} className="rounded-xl bg-surface-1 border border-line p-3">
+                <div className="text-sm font-medium">{q.id.toUpperCase()} — {q.question}</div>
+                {resolved ? (
+                  <div className="text-xs mt-1" style={{ color: "#e8b23a" }}>✓ {resolved}</div>
+                ) : (
+                  <div className="text-ink-2 text-xs mt-1">Default in effect: {q.seedDefault}</div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </BottomSheet>
     </div>

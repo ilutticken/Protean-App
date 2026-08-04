@@ -74,6 +74,13 @@ const MOVEMENT: Record<string, string> = {
   "clean_jerk.bw": "clean_and_jerk",
   "clean_jerk.1_5xbw": "clean_and_jerk",
   "barbell.clean_and_jerk": "clean_and_jerk",
+  "power_stunts.bw_power_clean": "power_clean",
+  "power_ramp.power_clean_0_75x": "power_clean",
+  "barbell.power_clean": "power_clean",
+  "power_stunts.bw_clean_and_press": "clean_and_press",
+  "barbell.clean_and_press": "clean_and_press",
+  "power_stunts.bw_snatch": "snatch",
+  "barbell.snatch": "snatch",
   "one_arm_pullup.wpu_100pct": "pullup_weighted",
   "dip.weighted_bw": "dip_weighted",
   // conditioning

@@ -120,9 +120,10 @@ describe("cross-reference: skill tree internal consistency", () => {
       const c = skills[id].criterion;
       if (c.kind === "e1rm-ratio") liftIds.add(c.liftId);
     }
-    expect([...liftIds].sort()).toEqual(
-      ["bench", "clean_and_press", "deadlift", "ohp", "power_clean", "snatch", "squat"].sort(),
-    );
+    // Olympic lifts were REMOVED from this set 2026-08-04: rep-based e1RM formulas do
+    // not apply to technique-limited singles, and no producer ever emitted those ids —
+    // the nodes were dead. They are weighted-reps now, fed by the quick lift-log.
+    expect([...liftIds].sort()).toEqual(["bench", "deadlift", "ohp", "squat"].sort());
   });
 });
 

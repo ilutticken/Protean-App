@@ -600,13 +600,17 @@ const nodeList: SkillNode[] = [
     "bridge.assisted_stand2stand",
   ], { estMonths: [6, 12] }),
   // Power stunts — doc 01 §4.1/§6 "power_stunts"; ordered by Everett cross-ratios.
-  node("power_stunts.bw_power_clean", "Bodyweight Power Clean", "back_chain", 0, e1rmRatio("power_clean", 1.0), [], {
+  // Olympic milestones are weighted-reps, not e1rm-ratio (converted 2026-08-04):
+  // rep-to-1RM formulas model grinding lifts and do not apply to technique-limited
+  // singles — and no producer ever emitted these lift ids, so the nodes were dead.
+  // Logged from Stats -> "Test a lift" (barbell.power_clean / clean_and_press / snatch).
+  node("power_stunts.bw_power_clean", "Bodyweight Power Clean", "back_chain", 0, wreps(1, 1), [], {
     description: "1.0×BW (♀ 0.80); coached technique assumed.",
   }),
-  node("power_stunts.bw_clean_and_press", "Bodyweight Clean & Press", "back_chain", 1, e1rmRatio("clean_and_press", 1.0), [
+  node("power_stunts.bw_clean_and_press", "Bodyweight Clean & Press", "back_chain", 1, wreps(1, 1), [
     "power_stunts.bw_power_clean",
   ], { description: "1.0×BW (♀ 0.80)." }),
-  node("power_stunts.bw_snatch", "Bodyweight Snatch", "back_chain", 2, e1rmRatio("snatch", 1.0), [
+  node("power_stunts.bw_snatch", "Bodyweight Snatch", "back_chain", 2, wreps(1, 1), [
     "power_stunts.bw_clean_and_press",
   ], { isStunt: true, estMonths: [12, 24], description: "1.0×BW (♀ 0.85); sanity check snatch ≈ 0.78–0.83 × C&J." }),
 

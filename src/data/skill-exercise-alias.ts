@@ -72,6 +72,14 @@ export const skillExerciseAlias: Record<string, string> = {
   "one_arm_pullup.wpu_100pct": "one_arm_pullup.wpu_25pct",
   "dip.weighted_bw": "dip.dip_weighted",
 
+  // Olympic milestone rungs — one catalog movement per line, tested from Stats ->
+  // "Test a lift". Full snatch only for the snatch node: a power snatch is a HARDER
+  // movement at equal load, and the safety rule forbids crediting across movements.
+  "power_stunts.bw_power_clean": "barbell.power_clean",
+  "power_ramp.power_clean_0_75x": "barbell.power_clean",
+  "power_stunts.bw_clean_and_press": "barbell.clean_and_press",
+  "power_stunts.bw_snatch": "barbell.snatch",
+
   // Jump rope volume rung — same movement as the catalog skip, 5x the reps.
   "skip.skip_500": "cond.skip",
 

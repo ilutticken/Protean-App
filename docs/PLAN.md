@@ -63,6 +63,30 @@ science-backed strength/performance estimates, and a stunt skill tree.
       prefer adding a new id and leaving the old one in place.
     - **Migrations archive, never drop** — see `AppData.archived`, written by v1 → v2.
 
+**History is editable** (2026-08-04, athlete-directed trust sweep): Stats → History lists every
+session with per-set edit/delete, session delete (two-tap), and delete rows for the three quick
+logs (lift/cardio/skill). Engine is `src/lib/history.ts` (pure, immutable, tested): an entry
+emptied of sets is pruned, a session emptied of entries is pruned unless `isoDone` keeps it
+meaningful. Because every number is DERIVED from the log, fixing the log fixes e1RM trends,
+skill credit and goal progress in one move — the test pins that editing a fat-fingered 3×40
+"pull-ups" to 3×4 un-achieves the falsely unlocked node while keeping `best: 4`. Deliberate
+limit: `SlotState` (chain position, confirms) is never rewound by an edit — re-simulating every
+applySession since the edit is a bigger correctness risk than it fixes; the step arrows in the
+next workout are the correction path.
+
+**Olympic milestones are weighted-reps, not e1RM** (2026-08-04): `power_stunts.bw_power_clean` /
+`bw_clean_and_press` / `bw_snatch` and `power_ramp.power_clean_0_75x` were dead — their
+`e1rm-ratio` lift ids (`power_clean`/`clean_and_press`/`snatch`) had no producer — and were
+wrong in kind: rep-to-1RM formulas model grinding lifts, not technique-limited singles. Now
+`wreps(1, ratio)` fed by new quick-loggable catalog lifts (`barbell.power_clean` /
+`clean_and_press` / `snatch`). The e1rm liftId set is pinned to bench/deadlift/ohp/squat in
+crossref.test.ts. Full snatch only credits the snatch node (alias safety: power snatch is a
+different, harder movement).
+
+**Q1–Q8 reconciled** (2026-08-04): the Plan banner no longer nags "await your confirmation" —
+it reads "2 resolved · 6 defaults in effect". `RESOLVED_QUESTIONS` in PlanScreen is the decision
+log overlay (Q1 and Q3 died with R-DYN); `authorQuestions` in seed-plan.ts stays verbatim.
+
 **Gym-phone PWA** (2026-08-04, athlete-directed — both athletes on Android): installable
 (`public/manifest.webmanifest` + rendered PNG icons 192/512/maskable, standalone display) and
 offline-capable via a hand-rolled `public/sw.js` (no workbox, same convention as no chart lib):

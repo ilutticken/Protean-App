@@ -35,7 +35,7 @@
 // hinge.glute_bridge_unilateral) are posterior-sector rows.
 
 import type { SectorExtension } from "../skill-helpers";
-import { e1rmRatio, hold, node, reps, wreps } from "../skill-helpers";
+import { hold, node, reps, wreps } from "../skill-helpers";
 
 const S = "back_chain" as const;
 
@@ -110,7 +110,7 @@ export const backChainExt: SectorExtension = {
     ], { description: "2×10 at ≈40% bodyweight. Seed full-02 band-1 step — a forgiving catch position before a barbell rack." }),
 
     // Level 6 (ring -0.5): the missing rung under the bodyweight power clean.
-    node("power_ramp.power_clean_0_75x", "Power Clean 0.75×BW", S, -0.5, e1rmRatio("power_clean", 0.75), [
+    node("power_ramp.power_clean_0_75x", "Power Clean 0.75×BW", S, -0.5, wreps(1, 0.75), [
       "power_ramp.hang_high_pull",
       "power.sandbag_clean",
       "hinge_ramp.rdl_half_bw",
