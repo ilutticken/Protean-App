@@ -63,6 +63,23 @@ science-backed strength/performance estimates, and a stunt skill tree.
       prefer adding a new id and leaving the old one in place.
     - **Migrations archive, never drop** — see `AppData.archived`, written by v1 → v2.
 
+**Six exercises per day** (2026-08-03, athlete-directed): the PDF runs 9–13 slots a day.
+`CORE_SLOTS` in `prescription.ts` names the six each day prescribes, chosen to keep every
+movement pattern the day owns while dropping duplicates and accessories. Everything else is
+flagged `Slot.optional` — still in the plan data, still listed on the Plan screen (dimmed,
+marked OPTIONAL), just not in the session. Nothing is deleted and `seed-plan.ts` is untouched.
+An alternative to a core slot (legs-04-alt) counts as core: it replaces its base rather than
+adding to the six. Changing the selection is one edit to `CORE_SLOTS`.
+
+**Completion is bi-directional** (2026-08-03, athlete-directed). Workout → tree already
+worked (`bestByExercise` keys on the logged exercise id). The other direction is
+`selectors.effectiveStepIndex()`: a chain step whose skill is already `achieved` — however
+it was achieved, whether by a workout, the Stunts skill log, or attestation — is never
+prescribed again. Chains are hardest-first, so the frontier walks from the EASIEST end and
+skips achieved steps; the result is min()'d with the stored progression, so the athlete is
+never regressed to something they have proven. A step with `opts` only counts as done when
+EVERY option is achieved. In-step slots are exempt (stepIndex is a T-index there).
+
 **Skill-practice log** (2026-08-03, Phase 2): the routine has three hold slots against a tree
 with ~100 hold nodes, so most skill work (planche leans, tuck front levers, wall handstands) had
 nowhere to be recorded and ~259 measurable nodes could never move. `AthleteState.skillLog` records

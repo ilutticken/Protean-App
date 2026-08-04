@@ -1,12 +1,13 @@
 import { useRef, useState } from "react";
 import type { DayId, Slot } from "../../lib/types";
 import { authorQuestions } from "../../data/seed-plan";
-import { plan as prescribedPlan } from "../../data/prescription";
+import { plan as prescribedPlan, CORE_SLOT_COUNT } from "../../data/prescription";
 import { exercises } from "../../data/exercises";
 import { useApp, updateAthlete, updateAthleteState } from "../../lib/useAppData";
 import { exportJson, importJson, save } from "../../lib/storage";
 import { isInStepSlot, targetFor } from "../../lib/progression";
 import { resolveSlotState } from "../../lib/slot-identity";
+import { effectiveStepIndex, skillStatuses } from "../../lib/selectors";
 import { creditedNodes } from "../../lib/credit";
 import { localISODate } from "../../lib/dates";
 import { cmToFeetInches, feetInchesToCm, formatHeight, fromKg, toKg } from "../../lib/units";
@@ -20,6 +21,7 @@ export default function PlanScreen() {
   const store = useApp();
   const { data, athlete, athleteState } = store;
   const tendonPacing = data.settings.tendonPacing;
+  const statuses = skillStatuses(data, athlete, athleteState);
   const [day, setDay] = useState<Exclude<DayId, "mobility">>("legs");
   const [qOpen, setQOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -79,7 +81,8 @@ export default function PlanScreen() {
         <h1 className="text-xl font-bold">The Protean Routine</h1>
         <p className="text-ink-3 text-xs">
           Chain slots, hardest first — you work the highlighted step; hit every set target in 2
-          straight sessions to advance.
+          straight sessions to advance. Each day prescribes {CORE_SLOT_COUNT} exercises; slots
+          marked OPTIONAL are extra work from the source routine and are not in the session.
         </p>
       </div>
 
@@ -119,7 +122,7 @@ export default function PlanScreen() {
                 key={slot.id}
                 slot={shown}
                 accent={athlete.accent}
-                stateIndex={resolveSlotState(shown, athleteState.slotState[shown.id])?.stepIndex}
+                stateIndex={effectiveStepIndex(shown, resolveSlotState(shown, athleteState.slotState[shown.id])?.stepIndex, statuses)}
                 confirms={athleteState.slotState[shown.id]?.confirmCount ?? 0}
                 alt={
                   altSlot
@@ -320,10 +323,14 @@ function ChainBoard({
   const info = targetFor(slot, { stepIndex: current, confirmCount: confirms });
 
   return (
-    <section className="rounded-2xl bg-surface-1 border border-line p-4" style={{ borderLeft: `3px solid ${hue}` }}>
+    <section
+      className={`rounded-2xl bg-surface-1 border border-line p-4 ${slot.optional ? "opacity-60" : ""}`}
+      style={{ borderLeft: `3px solid ${hue}` }}
+    >
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="text-[10px] uppercase tracking-wider" style={{ color: hue }}>
           {SECTORS[slot.sector].short} · {slot.id} · {slot.sets} sets
+          {slot.optional && <span className="text-ink-3"> · OPTIONAL</span>}
           {slot.tiers.length === 3 && <span className="nums"> · {slot.tiers.join("/")}</span>}
         </div>
         {alt && (

@@ -9,6 +9,7 @@ import type {
   SessionLog,
   Sex,
   Slot,
+  SkillProgress,
   TestResult,
 } from "./types";
 import { seedPlan } from "../data/seed-plan";
@@ -24,6 +25,7 @@ import type { RadarInput } from "./scoring";
 import { legerSpeedForLevel } from "./scoring";
 import type { TrendPoint } from "../ui/components/TrendChart";
 import { localISODate } from "./dates";
+import { isInStepSlot } from "./progression";
 
 // ---------------------------------------------------------------------------
 // Plan helpers
@@ -285,6 +287,52 @@ export function skillStatuses(data: AppData, athlete: Athlete, state: AthleteSta
     bodyweightKg: athlete.bodyweightKg,
     sex: athlete.sex,
   });
+}
+
+/**
+ * Completion is BI-DIRECTIONAL.
+ *
+ * Logging a workout already credits the skill tree — that is what bestByExercise does. This
+ * is the other direction: a chain step whose skill you have already achieved (on the Stunts
+ * screen, by attestation, or from any other log) should not keep being prescribed.
+ *
+ * Chains are hardest-first, so we walk from the EASIEST end and skip achieved steps. The
+ * result is the hardest step you have not yet proven.
+ *
+ * Returns undefined for in-step slots, where stepIndex is a T-index into `tiers` rather
+ * than a chain position and there is nothing positional to skip.
+ */
+export function skillFrontierIndex(
+  slot: Slot,
+  statuses: Record<string, SkillProgress>,
+): number | undefined {
+  if (isInStepSlot(slot)) return undefined;
+  const chain = slot.chain ?? [];
+  if (chain.length === 0) return undefined;
+  const achieved = (step: (typeof chain)[number]) => {
+    const ids = step.ex ? [step.ex] : (step.opts ?? []).map((o) => o.ex);
+    // A step counts as done only if EVERY option for it is achieved; an unachieved
+    // equipment choice still leaves work to do.
+    return ids.length > 0 && ids.every((id) => statuses[id]?.status === "achieved");
+  };
+  let i = chain.length - 1;
+  while (i > 0 && achieved(chain[i])) i -= 1;
+  return i;
+}
+
+/**
+ * The step the athlete should actually be working: never easier than what their logged
+ * progression says, never easier than what they have already proven on the tree.
+ * Lower index = harder, so this is a min().
+ */
+export function effectiveStepIndex(
+  slot: Slot,
+  storedIndex: number | undefined,
+  statuses: Record<string, SkillProgress>,
+): number {
+  const fallback = storedIndex ?? Math.max(slot.chain.length - 1, 0);
+  const frontier = skillFrontierIndex(slot, statuses);
+  return frontier === undefined ? fallback : Math.min(fallback, frontier);
 }
 
 // ---------------------------------------------------------------------------

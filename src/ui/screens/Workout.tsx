@@ -7,7 +7,7 @@ import { useApp, updateAthleteState } from "../../lib/useAppData";
 import { applySession, ghost, restSuggestion, targetFor, type ProgressionEvent } from "../../lib/progression";
 import { resolveSlotState, stampSlotState } from "../../lib/slot-identity";
 import { sessionCredit, type NodeCredit, type SessionCredit } from "../../lib/credit";
-import { athleteSessions, skillStatuses, slotById } from "../../lib/selectors";
+import { athleteSessions, effectiveStepIndex, skillStatuses, slotById } from "../../lib/selectors";
 import { SECTORS } from "../sectors";
 import RestTimer from "../components/RestTimer";
 import IsoTimer from "../components/IsoTimer";
@@ -27,7 +27,9 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
 
   const slots = useMemo(() => {
     if (dayId === "mobility") return [];
-    const all = prescribedPlan.days[dayId];
+    // Six exercises per day (prescription.ts CORE_SLOTS); the rest are `optional` and
+    // live on the Plan screen.
+    const all = prescribedPlan.days[dayId].filter((s) => !s.optional);
     return all.filter((s) => {
       if (!s.alternativeTo) {
         // hidden when the athlete picked its alternative
@@ -49,6 +51,12 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
     return out;
   }, [data.sessions, athlete.id]);
 
+  // Skill statuses drive the bi-directional start position below.
+  const statuses = useMemo(
+    () => skillStatuses(data, athlete, athleteState),
+    [data, athlete, athleteState],
+  );
+
   const [draft, setDraft] = useState<Record<string, SlotDraft>>(() => {
     const d: Record<string, SlotDraft> = {};
     for (const s of slots) {
@@ -56,7 +64,9 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
       // adding a rung to a chain can't reassign an athlete mid-progression.
       const st = resolveSlotState(s, athleteState.slotState[s.id]);
       d[s.id] = {
-        stepIndex: st?.stepIndex ?? s.chain.length - 1, // start at easiest
+        // Bi-directional: never prescribe a step whose skill is already achieved,
+        // however it was achieved (workout, Stunts log, or attestation).
+        stepIndex: effectiveStepIndex(s, st?.stepIndex, statuses),
         optIndex: st?.optIndex ?? 0,
         sets: Array(s.sets).fill(null),
       };

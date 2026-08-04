@@ -103,6 +103,11 @@ export interface Slot {
   workSec?: number; // rounds
   restSec?: number; // rounds
   alternativeTo?: string;
+  /**
+   * Not part of the day's 6 core exercises. Set by prescription.ts, never by the PDF
+   * transcription. The Workout screen hides these; the Plan screen still lists them.
+   */
+  optional?: boolean;
   note?: string;
   chain: ChainStep[]; // HARDEST FIRST
 }
