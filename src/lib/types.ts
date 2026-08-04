@@ -271,13 +271,34 @@ export interface LiftEntry {
 }
 
 /**
+ * One SET of deliberate skill practice, logged straight against a tree node.
+ *
+ * The routine has three hold slots and one iso spec, so there is nowhere in the week to
+ * record a tuck-planche hold, a wall handstand or a front-lever tuck — which is why ~259
+ * measurable nodes had no producer at all. This is the same fix as the cardio log: when
+ * the plan cannot produce the measurement, give the athlete a place to record it.
+ *
+ * One entry = one set. Entries on the same date for the same node form one session, so
+ * the enforced `sets` requirement (doc 01 R-DYN) is satisfied honestly.
+ */
+export interface SkillEntry {
+  date: string;
+  /** The skill-tree node id this set was performed against. */
+  nodeId: string;
+  /** Reps, or SECONDS when the node's criterion is a hold. */
+  value: number;
+  /** Added load, for weighted-reps criteria. */
+  weightKg?: number;
+}
+
+/**
  * A run or swim. The routine contains neither, so this log is the ONLY producer for the
  * tree's `time` / `distance` criteria — see src/lib/locomotion.ts.
  * One entry = one continuous effort; distances are never summed across entries.
  */
 export interface CardioEntry {
   date: string;
-  modality: "run" | "swim";
+  modality: "run" | "swim" | "row";
   meters: number;
   /** Optional — required only to credit the timed `run_speed.*` tiers. */
   seconds?: number;
@@ -290,8 +311,10 @@ export interface AthleteState {
   slotAlternatives: Record<string, string>;
   /** Quick-logged lift tests (Stats → Test a lift). */
   liftLog?: LiftEntry[];
-  /** Logged runs and swims (Stats → Log a run or swim). */
+  /** Logged runs, rows and swims (Stats → Cardio log). */
   cardioLog?: CardioEntry[];
+  /** Deliberate skill practice, logged against a node (Stunts → Log an attempt). */
+  skillLog?: SkillEntry[];
 }
 
 /**

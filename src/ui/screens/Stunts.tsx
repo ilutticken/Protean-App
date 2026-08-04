@@ -39,6 +39,88 @@ function criterionText(node: SkillNode, sex: Sex): string {
   }
 }
 
+/**
+ * Log one set of deliberate practice straight against this node.
+ *
+ * The routine has three hold slots for a tree with ~100 hold nodes, so most skill work
+ * (planche leans, tuck front levers, wall handstands) had nowhere to be recorded and those
+ * nodes could never move. Same fix as the cardio log: when the plan cannot produce the
+ * measurement, give the athlete somewhere to put it.
+ *
+ * Hidden for attested / balance nodes — those never auto-unlock (locked decision #10) and
+ * the producer ignores them anyway, so offering the box would be a lie.
+ */
+function LogAttempt({ node }: { node: SkillNode }) {
+  const store = useApp();
+  const { athlete, athleteState } = store;
+  const [value, setValue] = useState("");
+  const [weight, setWeight] = useState("");
+
+  const kind = node.criterion.kind;
+  if (kind === "attested" || node.sector === "balance") return null;
+  if (kind === "time" || kind === "distance") return null; // cardio log owns these
+  if (kind === "e1rm-ratio") return null; // quick lift-log owns these
+
+  const isHold = kind === "hold";
+  const wantsWeight = kind === "weighted-reps";
+  const mine = (athleteState.skillLog ?? []).filter((p) => p.nodeId === node.id);
+  const todayCount = mine.filter((p) => p.date === localISODate()).length;
+
+  function log() {
+    const v = Number(value);
+    if (!Number.isFinite(v) || v <= 0) return;
+    const w = Number(weight);
+    updateAthleteState(store, (s) => ({
+      ...s,
+      skillLog: [
+        ...(s.skillLog ?? []),
+        {
+          date: localISODate(),
+          nodeId: node.id,
+          value: v,
+          ...(wantsWeight && Number.isFinite(w) && w > 0 ? { weightKg: w } : {}),
+        },
+      ],
+    }));
+    setValue("");
+  }
+
+  return (
+    <div className="mt-4 rounded-xl bg-surface-1 border border-line p-3">
+      <div className="text-xs text-ink-3 uppercase tracking-wide mb-1.5">Log an attempt</div>
+      <div className="flex gap-2 items-center">
+        <input
+          className="w-24 rounded-lg bg-surface-2 border border-line px-3 py-2 nums outline-none focus:border-ink-3"
+          placeholder={isHold ? "seconds" : "reps"}
+          inputMode="numeric"
+          value={value}
+          onChange={(e) => setValue(e.target.value.replace(/[^\d.]/g, ""))}
+        />
+        {wantsWeight && (
+          <input
+            className="w-24 rounded-lg bg-surface-2 border border-line px-3 py-2 nums outline-none focus:border-ink-3"
+            placeholder="+kg"
+            inputMode="decimal"
+            value={weight}
+            onChange={(e) => setWeight(e.target.value.replace(/[^\d.]/g, ""))}
+          />
+        )}
+        <button
+          onClick={log}
+          className="rounded-lg px-4 py-2 text-sm font-semibold text-surface-0"
+          style={{ background: athlete.accent }}
+        >
+          Log set
+        </button>
+      </div>
+      <p className="text-ink-3 text-[11px] mt-2">
+        One set per tap. {todayCount > 0 ? `${todayCount} logged today · ` : ""}
+        {mine.length} total. Sets counted within a single day are what unlock the node.
+      </p>
+    </div>
+  );
+}
+
 function pctToward(node: SkillNode, p: SkillProgress | undefined, bw: number, sex: Sex): number {
   if (!p?.best) return 0;
   const c = node.criterion;
@@ -230,6 +312,8 @@ export default function Stunts() {
                 </div>
               </div>
             )}
+
+            <LogAttempt node={sel} />
 
             <div className="mt-5 flex gap-2">
               {selProgress?.status !== "achieved" ? (

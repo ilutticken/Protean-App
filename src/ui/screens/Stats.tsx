@@ -227,7 +227,7 @@ function CardioLog() {
     <>
       <section className="rounded-2xl bg-surface-1 border border-line p-4">
         <div className="flex items-center justify-between mb-2">
-          <h2 className="font-semibold text-sm">Runs &amp; swims</h2>
+          <h2 className="font-semibold text-sm">Cardio log</h2>
           <button
             onClick={() => setOpen(true)}
             className="rounded-lg border border-line bg-surface-2 px-3 py-1.5 text-xs"
@@ -237,20 +237,24 @@ function CardioLog() {
         </div>
         {log.length === 0 ? (
           <p className="text-ink-3 text-sm">
-            The routine has no running or swimming, so nothing else can unlock the Loco sector —
-            log a run or swim here and those nodes start moving.
+            The routine has no running, rowing or swimming, so nothing else can unlock the
+            Loco sector — log a piece here and those nodes start moving.
           </p>
         ) : (
           <>
-            <div className="flex gap-4 text-sm mb-2">
-              <span className="text-ink-2">
-                Run <span className="nums text-ink-1">{formatMeters(summary.run.farthestM)}</span>
-                <span className="text-ink-3 text-xs"> farthest · {summary.run.count}</span>
-              </span>
-              <span className="text-ink-2">
-                Swim <span className="nums text-ink-1">{formatMeters(summary.swim.farthestM)}</span>
-                <span className="text-ink-3 text-xs"> farthest · {summary.swim.count}</span>
-              </span>
+            <div className="flex flex-col gap-1 text-sm mb-2">
+              {(["run", "row", "swim"] as const)
+                .filter((m) => summary[m].count > 0)
+                .map((m) => (
+                  <div key={m} className="flex items-baseline gap-2">
+                    <span className="text-ink-2 capitalize w-11 shrink-0">{m}</span>
+                    <span className="nums text-ink-1">{formatMeters(summary[m].farthestM)}</span>
+                    <span className="text-ink-3 text-xs">farthest</span>
+                    <span className="text-ink-3 text-xs nums ml-auto">
+                      {formatMeters(summary[m].totalM)} total · {summary[m].count}
+                    </span>
+                  </div>
+                ))}
             </div>
             <div className="flex flex-col gap-1">
               {recent.map((e, i) => (
@@ -287,7 +291,7 @@ function CardioSheet({
   const [mins, setMins] = useState("");
   const [secs, setSecs] = useState("");
 
-  // Runs are entered in km, swims in metres — nobody logs a 0.4 km swim.
+  // Runs are entered in km; rowing and swimming in metres — nobody says "0.5 km erg".
   const meters = modality === "run" ? Number(distance) * 1000 : Number(distance);
 
   function save() {
@@ -313,10 +317,10 @@ function CardioSheet({
 
   return (
     <BottomSheet open={open} onClose={onClose}>
-      <h2 className="text-xl font-bold mb-3">Log a run or swim</h2>
+      <h2 className="text-xl font-bold mb-3">Log a piece</h2>
       <div className="flex flex-col gap-3">
         <div className="flex gap-2">
-          {(["run", "swim"] as const).map((m) => (
+          {(["run", "row", "swim"] as const).map((m) => (
             <button
               key={m}
               onClick={() => {

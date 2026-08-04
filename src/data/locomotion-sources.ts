@@ -18,7 +18,7 @@
 // Also excluded automatically (not by this file): attested nodes — swim_base.water_safety
 // and swim_base.open_water_400m are NO_AUTO_UNLOCK by addendum-1 §3.4/§4.
 
-export type CardioModality = "run" | "swim";
+export type CardioModality = "run" | "swim" | "row";
 
 export interface LocomotionSource {
   modality: CardioModality;
@@ -28,6 +28,12 @@ export interface LocomotionSource {
    * for a 5 km threshold (it is strictly harder), a 3 km time is not.
    */
   overMeters?: number;
+  /**
+   * Sum every logged effort instead of taking the farthest single one. Reserved for
+   * explicitly cumulative challenges (the Concept2 Million Metre Club) — the default
+   * everywhere else is one unbroken effort, and must stay that way.
+   */
+  cumulative?: boolean;
 }
 
 export const locomotionSources: Record<string, LocomotionSource> = {
@@ -63,6 +69,22 @@ export const locomotionSources: Record<string, LocomotionSource> = {
   "run_speed.marathon_t3": { modality: "run", overMeters: 42195 },
   "run_speed.marathon_t4": { modality: "run", overMeters: 42195 },
   "run_speed.marathon_t5": { modality: "run", overMeters: 42195 },
+
+  // ---- rowing (erg), distance ----------------------------------------------
+  "row_base.row_250m": { modality: "row" },
+  "row.500m": { modality: "row" },
+  "row.1k": { modality: "row" },
+  "row.2k": { modality: "row" },
+  "row.5k": { modality: "row" },
+  "row.10k": { modality: "row" },
+  "row.half": { modality: "row" },
+  "row.marathon": { modality: "row" },
+  "row.million_meters": { modality: "row", cumulative: true },
+
+  // ---- rowing, timed over 2 km ---------------------------------------------
+  "row_speed.2k_median": { modality: "row", overMeters: 2000 },
+  "row_speed.2k_advanced": { modality: "row", overMeters: 2000 },
+  "row_speed.2k_elite": { modality: "row", overMeters: 2000 },
 
   // ---- swimming, distance --------------------------------------------------
   "swim_base.crawl_25m": { modality: "swim" },

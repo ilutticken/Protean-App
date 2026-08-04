@@ -34,8 +34,10 @@ skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, 
   so they must never feed e1RM or the radar.
 - A criterion's `sets` is **enforced** — N qualifying sets in ONE session (doc 01 R-DYN).
 - Straight-arm pacing is **advisory by default** — warn, never block (PLAN.md "Tendon pacing").
-- Runs/swims have no home in the routine: `AthleteState.cardioLog` is the sole producer for the
-  tree's `time`/`distance` nodes, via `src/data/locomotion-sources.ts` (explicit allowlist — a new
+- Nodes the plan cannot measure are logged directly: `AthleteState.skillLog` (Stunts → Log an
+  attempt) keyed by NODE id. Producer skips `balance`/`attested` — never a backdoor around #10.
+- Runs/rows/swims have no home in the routine: `AthleteState.cardioLog` is the sole producer for the
+  tree's `time`/`distance` nodes (modalities run/row/swim), via `src/data/locomotion-sources.ts` (explicit allowlist — a new
   locomotion node must be registered there or excluded with a reason) and `src/lib/locomotion.ts`.
 - Skill tree: core lines live in `src/data/skills.ts`; per-sector additions go in
   `src/data/skills-ext/<sector>.ts` using the constructors in `src/data/skill-helpers.ts`.

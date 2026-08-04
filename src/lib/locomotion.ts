@@ -6,7 +6,7 @@
 // was nowhere to record a run or swim in the first place, since the routine contains
 // neither. See src/data/locomotion-sources.ts for which nodes may be credited and why.
 
-import { locomotionSources } from "../data/locomotion-sources";
+import { locomotionSources, type CardioModality } from "../data/locomotion-sources";
 import type { CardioEntry } from "./types";
 
 /**
@@ -20,15 +20,19 @@ export function locomotionBestFrom(log: CardioEntry[] | undefined): Record<strin
   const out: Record<string, number> = {};
   if (!log || log.length === 0) return out;
 
-  const farthest: Record<string, number> = { run: 0, swim: 0 };
+  const farthest: Record<string, number> = { run: 0, swim: 0, row: 0 };
+  const totals: Record<string, number> = { run: 0, swim: 0, row: 0 };
   for (const e of log) {
     if (!Number.isFinite(e.meters) || e.meters <= 0) continue;
     farthest[e.modality] = Math.max(farthest[e.modality] ?? 0, e.meters);
+    totals[e.modality] = (totals[e.modality] ?? 0) + e.meters;
   }
 
   for (const [nodeId, src] of Object.entries(locomotionSources)) {
     if (src.overMeters === undefined) {
-      const m = farthest[src.modality] ?? 0;
+      // `cumulative` is the documented exception (Million Metre Club); everything else
+      // is the farthest SINGLE effort — three 2 km rows are not a 5 km row.
+      const m = src.cumulative ? (totals[src.modality] ?? 0) : (farthest[src.modality] ?? 0);
       if (m > 0) out[nodeId] = m;
       continue;
     }
@@ -45,16 +49,26 @@ export function locomotionBestFrom(log: CardioEntry[] | undefined): Record<strin
 }
 
 /** Farthest single effort per modality — for the Stats summary line. */
-export function cardioSummary(log: CardioEntry[] | undefined): {
-  run: { count: number; farthestM: number };
-  swim: { count: number; farthestM: number };
-} {
-  const out = { run: { count: 0, farthestM: 0 }, swim: { count: 0, farthestM: 0 } };
+export interface ModalitySummary {
+  count: number;
+  farthestM: number;
+  totalM: number;
+}
+
+export function cardioSummary(
+  log: CardioEntry[] | undefined,
+): Record<CardioModality, ModalitySummary> {
+  const out: Record<CardioModality, ModalitySummary> = {
+    run: { count: 0, farthestM: 0, totalM: 0 },
+    swim: { count: 0, farthestM: 0, totalM: 0 },
+    row: { count: 0, farthestM: 0, totalM: 0 },
+  };
   for (const e of log ?? []) {
     const bucket = out[e.modality];
-    if (!bucket) continue;
+    if (!bucket || !Number.isFinite(e.meters)) continue;
     bucket.count += 1;
-    if (Number.isFinite(e.meters)) bucket.farthestM = Math.max(bucket.farthestM, e.meters);
+    bucket.farthestM = Math.max(bucket.farthestM, e.meters);
+    bucket.totalM += e.meters;
   }
   return out;
 }

@@ -82,6 +82,21 @@ export const runMartialExt: SectorExtension = {
       "run_base.strides",
     ], { evidence: "D", description: "Ten maximal 10–15 s efforts on a moderate hill with full walk-down recovery. Low soft-tissue risk relative to flat sprinting." }),
 
+    // -------------------------------------------------------------- erg on-ramp
+    // skills.ts starts rowing at a 500 m piece. Ring -4 is this sector's floor, so the
+    // rowing line needs a root down here or row.marathon cannot trace back to ring 0
+    // (locked decision #13, enforced by skills.test.ts).
+    node("row_base.stroke_drill", "Erg Stroke Drill", S, -4, reps(20, 3), [], {
+      evidence: "D",
+      description: "3×20 strokes at quarter pressure, calling the sequence out loud: legs, body, arms — arms, body, legs. Almost everyone rows arms-first for their whole life unless they drill this.",
+    }),
+    node("row_base.row_250m", "Row 250 m", S, -3, distanceOf(250, "one continuous piece"), [
+      "row_base.stroke_drill",
+    ], {
+      evidence: "D",
+      description: "One minute or so of continuous rowing with the sequence intact. The rung beneath the 500 m sprint.",
+    }),
+
     // ------------------------------------------------------------- swim on-ramp
     // addendum-1 §3.4: below water competence, gate behind lessons and DO NOT gamify
     // (drowning risk). The pre-competence node is therefore attestation-only.
@@ -203,6 +218,8 @@ export const runMartialExt: SectorExtension = {
   // Splice the new easier work beneath the hubs that skills.ts already authored, and
   // hang the doc-mandated long runs off the distance ladder they gate.
   rewire: {
+    // Root the skills.ts rowing ladder on the erg on-ramp above.
+    "row.500m": ["row_base.row_250m"],
     "run_distance.mile": ["run_base.jog_1k"],
     "run_distance.5k": ["run_base.run_2k"],
     // NOT rewired: run_distance.10k. The 8 km long run is our own interpolation, not a

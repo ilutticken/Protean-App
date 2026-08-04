@@ -86,8 +86,25 @@ const runSpeedSpecs: RunSpeedSpec[] = [
 ];
 
 /** Per-sex locomotion time thresholds (seconds) keyed by node id — addendum-1 §3.2 (tier B). */
+/**
+ * 2 km erg standards. NOT in the research corpus — indoor rowing was never covered — so
+ * these are sourced fresh from indoor-rowing aggregators and carry evidence tier D:
+ * population approximations, not a validated table like StrengthLevel.
+ *   median   all-ages Concept2 logbook average: M 7:04, F 8:25
+ *            [rowingregimen.com/blog/2000m-rowing-times]
+ *   advanced M 6:30, F 7:45  [boxrox.com average-2000m-row-times-for-men / -for-women]
+ *   elite    M sub-6:00, F sub-7:00 (competitive heavyweight band)
+ *            [doubleedgefitness.com/unlocking-the-power-of-the-2k-row]
+ * Seconds, lower is better; female values are slower, as skills.test.ts asserts.
+ */
+const rowSpeedSpecs: RunSpeedSpec[] = [
+  { id: "row_speed.2k_median", name: "2K Erg Median", ring: 3, prereq: "row.2k", male: 424, female: 505 },
+  { id: "row_speed.2k_advanced", name: "2K Erg Advanced", ring: 4, prereq: "row_speed.2k_median", male: 390, female: 465 },
+  { id: "row_speed.2k_elite", name: "2K Erg Elite", ring: 5, prereq: "row_speed.2k_advanced", male: 360, female: 420 },
+];
+
 export const locomotionTimeBySex: Record<string, { male: number; female: number }> = Object.fromEntries(
-  runSpeedSpecs.map((s) => [s.id, { male: s.male, female: s.female }]),
+  [...runSpeedSpecs, ...rowSpeedSpecs].map((s) => [s.id, { male: s.male, female: s.female }]),
 );
 
 /**
@@ -871,6 +888,43 @@ const nodeList: SkillNode[] = [
     node(s.id, s.name, "run_martial", s.ring, timeUnder(s.male, "male threshold; female via locomotionTimeBySex"), [
       s.prereq,
     ], { evidence: "B", description: "RunRepeat finisher percentiles (finishers-only, pre-2020 vintage)." }),
+  ),
+  // Rowing / erg ladder. Nothing in the corpus covers indoor rowing; distances are the
+  // standard Concept2 pieces and the whole line is evidence tier D. Logged from the cardio
+  // log (modality "row") — the routine contains no rowing, exactly as with running.
+  node("row.500m", "Row 500 m", "run_martial", 0, distanceOf(500, "one continuous piece"), [], {
+    evidence: "D",
+    description: "The erg sprint. Two minutes of unpleasantness and the entry point to every other piece here.",
+  }),
+  node("row.1k", "Row 1 km", "run_martial", 1, distanceOf(1000), ["row.500m"], {
+    evidence: "D", description: "Long enough that pacing starts to matter.",
+  }),
+  node("row.2k", "Row 2 km", "run_martial", 2, distanceOf(2000), ["row.1k"], {
+    evidence: "D",
+    description: "THE benchmark piece — every rowing programme in the world is judged on it. Complete one first; the time tiers above ask you to get fast at it.",
+  }),
+  node("row.5k", "Row 5 km", "run_martial", 3, distanceOf(5000), ["row.2k"], {
+    evidence: "D", description: "The aerobic counterpart to the 2K's threshold test.",
+  }),
+  node("row.10k", "Row 10 km", "run_martial", 4, distanceOf(10000), ["row.5k"], { evidence: "D" }),
+  node("row.half", "Row Half Marathon", "run_martial", 5, distanceOf(21097, "1 piece"), ["row.10k"], {
+    evidence: "D", estMonths: [6, 12], description: "21,097 m unbroken. Seat and hands fail before the legs do.",
+  }),
+  node("row.marathon", "Row Marathon", "run_martial", 6, distanceOf(42195, "1 piece"), ["row.half"], {
+    isStunt: true, evidence: "D", estMonths: [12, 24],
+    description: "42,195 m in one sitting — around three hours on the erg. A Concept2 season-classic piece and pure attrition.",
+  }),
+  node("row.million_meters", "Million Metres", "run_martial", 7, distanceOf(1000000, "CUMULATIVE total"), [
+    "row.marathon",
+  ], {
+    isStunt: true, evidence: "D", estMonths: [12, 36],
+    description: "The Concept2 Million Metre Club. The ONLY cumulative criterion in the app — every other distance is one unbroken effort. Roughly 20 km a week for a year.",
+  }),
+  // 2K erg time tiers — criterion seconds = ♂ threshold; ♀ via locomotionTimeBySex.
+  ...rowSpeedSpecs.map((s) =>
+    node(s.id, s.name, "run_martial", s.ring, timeUnder(s.male, "male threshold; female via locomotionTimeBySex"), [
+      s.prereq,
+    ], { evidence: "D", description: "Indoor-rowing population approximations, not a validated table — see the note on rowSpeedSpecs." }),
   ),
   // Swim ladder — addendum-1 §3.4.
   node("swim.competence_100m", "Water Competence (100 m)", "run_martial", 0, distanceOf(100, "continuous, any stroke"), [], {

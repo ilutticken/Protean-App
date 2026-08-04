@@ -63,6 +63,24 @@ science-backed strength/performance estimates, and a stunt skill tree.
       prefer adding a new id and leaving the old one in place.
     - **Migrations archive, never drop** — see `AppData.archived`, written by v1 → v2.
 
+**Skill-practice log** (2026-08-03, Phase 2): the routine has three hold slots against a tree
+with ~100 hold nodes, so most skill work (planche leans, tuck front levers, wall handstands) had
+nowhere to be recorded and ~259 measurable nodes could never move. `AthleteState.skillLog` records
+one SET of practice straight against a node id — the same key `criterionMet` already reads — with
+entries on one date forming one session, so the enforced `sets` requirement is satisfied honestly.
+`balance` and `attested` nodes are skipped by the producer AND hidden in the UI: self-reported reps
+must not become a backdoor around locked decision #10. This supersedes PLAN-GENERATOR §8's
+"author node-trainers for 245 nodes" — the athlete measuring the skill directly is both cheaper
+and more honest than inferring it from a proxy exercise. Reachable-without-manual-marking went
+228/557 (41%) → 525/595 (88%); the remaining 70 are the 68 attested-by-design plus 2 session-shape
+exclusions.
+
+**Rowing** (2026-08-03): the corpus never covered indoor rowing, so the erg ladder
+(`row.*`, `row_speed.2k_*`) is sourced fresh and carries evidence tier D — see the note on
+`rowSpeedSpecs` in `skills.ts` for the three anchors and their URLs. `CardioEntry.modality` gained
+`"row"`. `row.million_meters` is the ONLY cumulative criterion in the app (`LocomotionSource.
+cumulative`); every other distance is one unbroken effort and must stay that way.
+
 **Rep prescription — R-DYN** (2026-08-02, athlete-directed): the PDF gives each chain a
 single high rep band (2×25/50/100), which produces nonsense at the hard end (push-03
 prescribed 2×20 *full planche push-ups*, flagged in the seed as PENDING-Q3) and, at the easy

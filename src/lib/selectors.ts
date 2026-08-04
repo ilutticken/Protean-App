@@ -122,6 +122,31 @@ export function bestByExercise(
       }
     }
   }
+  // Skill practice logs straight against a node id, which IS the key criterionMet reads.
+  // Deliberately skipped: `balance` and `attested` nodes, which never auto-unlock
+  // (locked decision #10) — self-reported reps must not become a backdoor around that.
+  for (const p of state.skillLog ?? []) {
+    const node = skills[p.nodeId];
+    if (!node || node.sector === "balance" || node.criterion.kind === "attested") continue;
+    if (!Number.isFinite(p.value) || p.value <= 0) continue;
+    const isHold = node.criterion.kind === "hold";
+    const rec = session(p.nodeId, `skill:${p.date}`);
+    if (isHold) {
+      bump(p.nodeId, { maxHoldSec: p.value });
+      rec.holds.push(p.value);
+    } else {
+      bump(p.nodeId, { maxRepsPerSet: p.value });
+      rec.reps.push(p.value);
+    }
+    if (p.weightKg !== undefined && Number.isFinite(p.weightKg)) {
+      bump(p.nodeId, { maxWeightKg: p.weightKg });
+      if (!isHold) {
+        pair(p.nodeId, p.value, p.weightKg);
+        rec.pairs.push({ reps: p.value, weightKg: p.weightKg });
+      }
+    }
+  }
+
   // Quick-logged lifts group by DATE — several entries on one day are one testing session.
   for (const l of state.liftLog ?? []) {
     bump(l.exerciseId, { maxRepsPerSet: l.reps, maxWeightKg: l.weightKg });

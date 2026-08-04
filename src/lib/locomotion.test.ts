@@ -44,11 +44,18 @@ describe("locomotion source registry", () => {
     }
   });
 
-  it("puts every swim.* / swim_base.* node on the swim modality and nothing else", () => {
+  it("assigns each node the modality its id namespace implies", () => {
     for (const [id, src] of Object.entries(locomotionSources)) {
-      const isSwim = id.startsWith("swim.") || id.startsWith("swim_base.");
-      expect(src.modality, id).toBe(isSwim ? "swim" : "run");
+      const expected = /^swim(_base)?\./.test(id) ? "swim" : /^row(_base|_speed)?\./.test(id) ? "row" : "run";
+      expect(src.modality, id).toBe(expected);
     }
+  });
+
+  it("marks exactly one node cumulative — the Million Metre Club", () => {
+    const cumulative = Object.entries(locomotionSources)
+      .filter(([, s]) => s.cumulative)
+      .map(([id]) => id);
+    expect(cumulative).toEqual(["row.million_meters"]);
   });
 
   it("times each run_speed tier over its own race distance", () => {
@@ -166,6 +173,46 @@ describe("skillStatuses with a cardio log — the end-to-end unlock", () => {
   });
 });
 
+describe("rowing", () => {
+  const row = (meters: number, seconds?: number): CardioEntry => ({
+    date: "2026-08-03",
+    modality: "row",
+    meters,
+    ...(seconds !== undefined ? { seconds } : {}),
+  });
+
+  it("credits the erg ladder from the farthest single piece", () => {
+    const best = locomotionBestFrom([row(5000)]);
+    expect(best["row.2k"]).toBe(5000);
+    expect(best["row.5k"]).toBe(5000);
+    expect(best["row.marathon"]).toBe(5000); // best-so-far, criterion still unmet
+  });
+
+  it("keeps rowing separate from running and swimming", () => {
+    const best = locomotionBestFrom([run(10000)]);
+    expect(best["row.2k"]).toBeUndefined();
+  });
+
+  it("SUMS every piece for the Million Metre Club, and only for that node", () => {
+    const log = [row(200000), row(300000), row(500000)];
+    const best = locomotionBestFrom(log);
+    expect(best["row.million_meters"]).toBe(1000000);
+    // ...but the one-piece nodes still see only the farthest single row.
+    expect(best["row.marathon"]).toBe(500000);
+    expect(best["row.half"]).toBe(500000);
+  });
+
+  it("does not sum runs or swims", () => {
+    const best = locomotionBestFrom([run(20000), run(30000)]);
+    expect(best["run_distance.marathon"]).toBe(30000);
+  });
+
+  it("scores the 2K time tiers off a piece of at least 2 km", () => {
+    expect(locomotionBestFrom([row(2000, 400)])["row_speed.2k_median"]).toBe(400);
+    expect(locomotionBestFrom([row(1000, 180)])["row_speed.2k_median"]).toBeUndefined();
+  });
+});
+
 describe("display helpers", () => {
   it("formats metres and kilometres", () => {
     expect(formatMeters(800)).toBe("800 m");
@@ -180,7 +227,8 @@ describe("display helpers", () => {
 
   it("summarizes per modality", () => {
     const s = cardioSummary([run(5000), run(2000), swim(400)]);
-    expect(s.run).toEqual({ count: 2, farthestM: 5000 });
-    expect(s.swim).toEqual({ count: 1, farthestM: 400 });
+    expect(s.run).toEqual({ count: 2, farthestM: 5000, totalM: 7000 });
+    expect(s.swim).toEqual({ count: 1, farthestM: 400, totalM: 400 });
+    expect(s.row).toEqual({ count: 0, farthestM: 0, totalM: 0 });
   });
 });
