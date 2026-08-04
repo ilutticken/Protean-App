@@ -34,6 +34,9 @@ skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, 
   so they must never feed e1RM or the radar.
 - A criterion's `sets` is **enforced** — N qualifying sets in ONE session (doc 01 R-DYN).
 - Straight-arm pacing is **advisory by default** — warn, never block (PLAN.md "Tendon pacing").
+- Goal mode: `AthleteState.goal` + `src/lib/goal.ts`. Map/route uses strict `prereqClosure`;
+  badges and the Stats set-rate use `goalRelevantIds` (closure + goal's own line). Progress is
+  always "steps remaining", never a date. Goal mode never adds volume.
 - A workout is **6 exercises** — `CORE_SLOTS` in `prescription.ts`; the rest carry
   `Slot.optional` and appear only on the Plan screen. Read the session via `coreSlots(dayId)`.
 - Completion is **bi-directional**: read a slot's working step through

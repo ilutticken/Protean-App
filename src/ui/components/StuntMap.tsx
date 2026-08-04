@@ -14,12 +14,21 @@ export interface MapNode {
  * build-time radial layout, single-transform pan/zoom (pointer events, pinch),
  * LOD labels at zoom ≥ 0.7, ≥44px hit circles, sector chips row for jumps.
  */
+/** Gold used for the goal route — distinct from every sector hue and both status fills. */
+export const GOAL_COLOR = "#e8b23a";
+
 export default function StuntMap({
   nodes,
   onSelect,
+  goalId,
+  goalPath,
 }: {
   nodes: MapNode[];
   onSelect: (id: string) => void;
+  /** The starred stunt, if any. */
+  goalId?: string | null;
+  /** Ids on the goal's prerequisite closure — rendered as a gold route. */
+  goalPath?: ReadonlySet<string>;
 }) {
   const layout = useMemo(() => computeLayout(nodes), [nodes]);
   const svgRef = useRef<SVGSVGElement>(null);
@@ -220,6 +229,8 @@ export default function StuntMap({
                 showLabel={showLabels}
                 fontSize={LABEL_FONT}
                 strokeWorld={strokeWorld}
+                onGoalPath={goalPath?.has(p.mn.node.id) ?? false}
+                isGoal={p.mn.node.id === goalId}
                 onTap={() => {
                   if (!gesture.current?.moved) onSelect(p.mn.node.id);
                 }}
@@ -475,12 +486,16 @@ function NodeGlyph({
   fontSize,
   strokeWorld,
   onTap,
+  onGoalPath,
+  isGoal,
 }: {
   p: Placed;
   showLabel: boolean;
   fontSize: number;
   strokeWorld: number;
   onTap: () => void;
+  onGoalPath: boolean;
+  isGoal: boolean;
 }) {
   const { status } = p.mn;
   const { isStunt } = p.mn.node;
@@ -521,6 +536,26 @@ function NodeGlyph({
       />
       {inProgress && (
         <path d={hexPath(p.x, p.y, r)} fill="none" stroke={p.hex} strokeWidth={strokeWorld * 0.5} opacity="0.5" />
+      )}
+      {/* Goal route: a gold outline that survives overview zoom — the point is seeing
+          the whole path across the map. The goal itself gets a second, outer ring. */}
+      {onGoalPath && (
+        <path
+          d={hexPath(p.x, p.y, r + 3)}
+          fill="none"
+          stroke={GOAL_COLOR}
+          strokeWidth={strokeWorld * (isGoal ? 1.2 : 0.8)}
+          opacity={0.95}
+        />
+      )}
+      {isGoal && (
+        <path
+          d={hexPath(p.x, p.y, r + 3 + strokeWorld * 2)}
+          fill="none"
+          stroke={GOAL_COLOR}
+          strokeWidth={strokeWorld * 0.6}
+          opacity={0.6}
+        />
       )}
       {inProgress && p.mn.pct > 0 && (
         <ProgressRing

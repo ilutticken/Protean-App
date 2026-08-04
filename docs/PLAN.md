@@ -63,6 +63,17 @@ science-backed strength/performance estimates, and a stunt skill tree.
       prefer adding a new id and leaving the old one in place.
     - **Migrations archive, never drop** — see `AppData.archived`, written by v1 → v2.
 
+**Goal mode** (2026-08-04, PLAN-GENERATOR.md Phase 3 — shipped): `AthleteState.goal` stores one
+starred stunt. `src/lib/goal.ts` is the pure engine: `prereqClosure` (route on the map),
+`goalRelevantIds` (closure + the goal's own id-namespace line — sibling drills like the FL
+flutter train the goal without being formal prerequisites), `goalPath` (achieved/remaining +
+the startable frontier, shallowest ring first), `goalRelevantSetRate` (the §1 acceptance
+metric, trailing 7 days, target ≥40%). Surfaces: gold route + double ring on the hex map,
+★ GOAL badges on Plan boards, ★ on goal-path nodes in the session credit summary, a Today
+progress card ("N steps left" — never dates, per §10), and the Stats rate card. Locked
+limits respected: goal mode annotates and measures, never adds volume (§9.3); slot badges
+exclude attested/balance nodes, so an acrobatic goal lights no slot it cannot move.
+
 **Six exercises per day** (2026-08-03, athlete-directed): the PDF runs 9–13 slots a day.
 `CORE_SLOTS` in `prescription.ts` names the six each day prescribes, chosen to keep every
 movement pattern the day owns while dropping duplicates and accessories. Everything else is

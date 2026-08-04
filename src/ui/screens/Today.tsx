@@ -2,7 +2,8 @@ import { useMemo } from "react";
 import type { DayId } from "../../lib/types";
 import { seedPlan } from "../../data/seed-plan";
 import { useApp } from "../../lib/useAppData";
-import { nextDayId, prFeed, weeklyStreak, athleteSessions } from "../../lib/selectors";
+import { nextDayId, prFeed, weeklyStreak, athleteSessions, skillStatuses } from "../../lib/selectors";
+import { goalPath } from "../../lib/goal";
 import { deloadCheck } from "../../lib/progression";
 import { localISODate } from "../../lib/dates";
 
@@ -23,7 +24,7 @@ const DAY_BLURB: Record<DayId, string> = {
 };
 
 export default function Today({ onStart }: { onStart: (day: DayId) => void }) {
-  const { data, athlete } = useApp();
+  const { data, athlete, athleteState } = useApp();
   const todayISO = localISODate();
 
   const planned = useMemo(() => nextDayId(data.sessions, athlete.id), [data.sessions, athlete.id]);
@@ -114,6 +115,39 @@ export default function Today({ onStart }: { onStart: (day: DayId) => void }) {
           Streaks count weeks with ≥{streak.target} training days — one missed day never matters.
         </p>
       </section>
+
+      {/* goal card */}
+      {(() => {
+        const g = athleteState.goal;
+        if (!g) return null;
+        const p = goalPath(g.nodeId, skillStatuses(data, athlete, athleteState));
+        if (!p) return null;
+        return (
+          <section className="rounded-2xl bg-surface-1 border border-line p-4" style={{ borderTop: "2px solid #e8b23a" }}>
+            <div className="flex items-baseline justify-between">
+              <div className="font-semibold text-sm">★ {p.goal.name}</div>
+              <div className="text-ink-3 text-xs nums">
+                {p.achieved}/{p.total} · {p.remaining} steps left
+              </div>
+            </div>
+            <div className="h-1.5 rounded-full bg-surface-3 mt-2 overflow-hidden">
+              <div
+                className="h-full rounded-full"
+                style={{ width: `${Math.round((100 * p.achieved) / Math.max(p.total, 1))}%`, background: "#e8b23a" }}
+              />
+            </div>
+            {p.remaining > 0 ? (
+              <p className="text-ink-2 text-xs mt-2">
+                Next up: {p.nextUp.slice(0, 2).map((n) => n.name).join(" · ") || "clear a locked prerequisite"}
+              </p>
+            ) : (
+              <p className="text-xs mt-2" style={{ color: "#e8b23a" }}>
+                Path complete — go take it, then pick the next one.
+              </p>
+            )}
+          </section>
+        );
+      })()}
 
       {/* PR feed */}
       <section className="rounded-2xl bg-surface-1 border border-line p-4">

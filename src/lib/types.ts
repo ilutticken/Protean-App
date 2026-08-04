@@ -309,6 +309,12 @@ export interface CardioEntry {
   seconds?: number;
 }
 
+/** The active target stunt (goal mode, PLAN-GENERATOR.md Phase 3). One at a time. */
+export interface GoalState {
+  nodeId: string;
+  startedDate: string;
+}
+
 export interface AthleteState {
   skillProgress: Record<string, SkillProgress>;
   slotState: Record<string, SlotState>;
@@ -320,6 +326,8 @@ export interface AthleteState {
   cardioLog?: CardioEntry[];
   /** Deliberate skill practice, logged against a node (Stunts → Log an attempt). */
   skillLog?: SkillEntry[];
+  /** The stunt currently being chased; drives path highlighting and slot badges. */
+  goal?: GoalState;
 }
 
 /**

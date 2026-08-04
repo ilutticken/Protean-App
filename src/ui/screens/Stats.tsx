@@ -10,6 +10,7 @@ import {
 } from "../../lib/selectors";
 import { radar, AXIS_LABELS, AXIS_ORDER } from "../../lib/scoring";
 import { cardioSummary, formatDuration, formatMeters } from "../../lib/locomotion";
+import { goalRelevantIds, goalRelevantSetRate } from "../../lib/goal";
 import { relativeStrength } from "../../lib/strength";
 import { tests as testDefs } from "../../data/norms";
 import { STANDARDS_LEVEL_NAMES, STANDARDS_PULLED_DATE, type LiftKey } from "../../data/standards";
@@ -79,8 +80,21 @@ const TESTABLE_LIFTS: { exerciseId: string; label: string }[] = [
 
 export default function Stats() {
   const store = useApp();
-  const { data, athlete } = store;
+  const { data, athlete, athleteState } = store;
   const [tab, setTab] = useState<StatsTab>("lifts");
+
+  // Goal-relevant set rate over the trailing 7 days — the PLAN-GENERATOR §1 acceptance
+  // metric (target ≥40% of weekly hard sets on the goal's prerequisite closure).
+  const goalRate = useMemo(() => {
+    const g = athleteState.goal;
+    if (!g) return null;
+    const since = localISODate(new Date(Date.now() - 7 * 86400e3));
+    const closure = goalRelevantIds(g.nodeId);
+    return {
+      nodeId: g.nodeId,
+      ...goalRelevantSetRate(data.sessions, athleteState.skillLog, athlete.id, closure, since),
+    };
+  }, [athleteState.goal, athleteState.skillLog, data.sessions, athlete.id]);
 
   return (
     <div className="flex flex-col gap-4">
@@ -98,6 +112,18 @@ export default function Stats() {
         ))}
       </div>
 
+      {goalRate && (
+        <section className="rounded-2xl bg-surface-1 border border-line px-4 py-3 text-sm flex items-baseline gap-2">
+          <span style={{ color: "#e8b23a" }}>★</span>
+          <span className="text-ink-2">Last 7 days:</span>
+          <span className="nums text-ink-1 font-semibold">
+            {goalRate.rate === null ? "—" : `${Math.round(goalRate.rate * 100)}%`}
+          </span>
+          <span className="text-ink-3 text-xs">
+            of {goalRate.total} sets moved your goal path{goalRate.rate !== null && goalRate.rate >= 0.4 ? " · on target" : goalRate.rate !== null ? " · target 40%" : ""}
+          </span>
+        </section>
+      )}
       {tab === "lifts" && <LiftsTab />}
       {tab === "volume" && (
         <section className="rounded-2xl bg-surface-1 border border-line p-4">

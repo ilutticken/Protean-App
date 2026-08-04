@@ -8,6 +8,7 @@ import { exportJson, importJson, save } from "../../lib/storage";
 import { isInStepSlot, targetFor } from "../../lib/progression";
 import { resolveSlotState } from "../../lib/slot-identity";
 import { effectiveStepIndex, skillStatuses } from "../../lib/selectors";
+import { goalRelevantIds, slotFeedsGoal } from "../../lib/goal";
 import { creditedNodes } from "../../lib/credit";
 import { localISODate } from "../../lib/dates";
 import { cmToFeetInches, feetInchesToCm, formatHeight, fromKg, toKg } from "../../lib/units";
@@ -22,6 +23,7 @@ export default function PlanScreen() {
   const { data, athlete, athleteState } = store;
   const tendonPacing = data.settings.tendonPacing;
   const statuses = skillStatuses(data, athlete, athleteState);
+  const goalClosure = athleteState.goal ? goalRelevantIds(athleteState.goal.nodeId) : null;
   const [day, setDay] = useState<Exclude<DayId, "mobility">>("legs");
   const [qOpen, setQOpen] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
@@ -124,6 +126,7 @@ export default function PlanScreen() {
                 accent={athlete.accent}
                 stateIndex={effectiveStepIndex(shown, resolveSlotState(shown, athleteState.slotState[shown.id])?.stepIndex, statuses)}
                 confirms={athleteState.slotState[shown.id]?.confirmCount ?? 0}
+                feedsGoal={goalClosure ? slotFeedsGoal(shown, goalClosure) : false}
                 alt={
                   altSlot
                     ? { usingAlt: Boolean(usingAlt), toggle: () => pickAlternative(slot.id, usingAlt ? null : altSlot.id) }
@@ -310,12 +313,14 @@ function ChainBoard({
   stateIndex,
   confirms,
   alt,
+  feedsGoal,
 }: {
   slot: Slot;
   accent: string;
   stateIndex?: number;
   confirms: number;
   alt?: { usingAlt: boolean; toggle: () => void };
+  feedsGoal?: boolean;
 }) {
   const hue = SECTORS[slot.sector].hex;
   const inStep = isInStepSlot(slot);
@@ -331,6 +336,7 @@ function ChainBoard({
         <div className="text-[10px] uppercase tracking-wider" style={{ color: hue }}>
           {SECTORS[slot.sector].short} · {slot.id} · {slot.sets} sets
           {slot.optional && <span className="text-ink-3"> · OPTIONAL</span>}
+          {feedsGoal && <span style={{ color: "#e8b23a" }}> · ★ GOAL</span>}
           {slot.tiers.length === 3 && <span className="nums"> · {slot.tiers.join("/")}</span>}
         </div>
         {alt && (

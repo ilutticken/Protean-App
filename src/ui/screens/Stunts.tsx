@@ -4,6 +4,7 @@ import { skills, locomotionTimeBySex } from "../../data/skills";
 import { useApp, updateAthleteState } from "../../lib/useAppData";
 import { skillStatuses } from "../../lib/selectors";
 import { sectorCompletion, effectiveBwRatio } from "../../lib/skilltree";
+import { goalPath as computeGoalPath } from "../../lib/goal";
 import { localISODate } from "../../lib/dates";
 import StuntMap, { type MapNode } from "../components/StuntMap";
 import BottomSheet from "../components/BottomSheet";
@@ -166,6 +167,12 @@ export default function Stunts() {
     [statuses, athlete.bodyweightKg, athlete.sex],
   );
 
+  const goal = athleteState.goal ?? null;
+  const path = useMemo(
+    () => (goal ? computeGoalPath(goal.nodeId, statuses) : null),
+    [goal, statuses],
+  );
+
   const sel = selected ? skills[selected] : null;
   const selProgress = selected ? statuses[selected] : undefined;
 
@@ -199,6 +206,15 @@ export default function Stunts() {
           <p className="text-ink-3 text-xs nums">
             {achievedTotal}/{total} unlocked · {athlete.name}
           </p>
+          {path && (
+            <button
+              onClick={() => setSelected(path.goal.id)}
+              className="text-xs mt-0.5 text-left"
+              style={{ color: "#e8b23a" }}
+            >
+              ★ {path.goal.name} — {path.achieved}/{path.total} on path · {path.remaining} steps left
+            </button>
+          )}
         </div>
         <button
           onClick={() => setListMode((m) => !m)}
@@ -252,7 +268,7 @@ export default function Stunts() {
           })}
         </div>
       ) : (
-        <StuntMap nodes={mapNodes} onSelect={setSelected} />
+        <StuntMap nodes={mapNodes} onSelect={setSelected} goalId={goal?.nodeId} goalPath={path?.closure} />
       )}
 
       <BottomSheet open={sel !== null} onClose={() => setSelected(null)}>
@@ -311,6 +327,31 @@ export default function Stunts() {
                   ))}
                 </div>
               </div>
+            )}
+
+            {sel.isStunt && (
+              <button
+                onClick={() => {
+                  const isCurrent = goal?.nodeId === sel.id;
+                  updateAthleteState(store, (s) => ({
+                    ...s,
+                    goal: isCurrent ? undefined : { nodeId: sel.id, startedDate: localISODate() },
+                  }));
+                }}
+                className="mt-4 w-full rounded-xl py-2.5 text-sm font-semibold border"
+                style={
+                  goal?.nodeId === sel.id
+                    ? { borderColor: "#e8b23a", color: "#e8b23a" }
+                    : { borderColor: "var(--color-line)", color: "var(--color-ink-2)" }
+                }
+              >
+                {goal?.nodeId === sel.id ? "★ Your goal — tap to clear" : "☆ Set as goal"}
+              </button>
+            )}
+            {!sel.isStunt && path?.closure.has(sel.id) && selProgress?.status !== "achieved" && (
+              <p className="mt-3 text-xs" style={{ color: "#e8b23a" }}>
+                ★ On your path to {path.goal.name}
+              </p>
             )}
 
             <LogAttempt node={sel} />

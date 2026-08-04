@@ -7,6 +7,7 @@ import { useApp, updateAthleteState } from "../../lib/useAppData";
 import { applySession, ghost, restSuggestion, targetFor, type ProgressionEvent } from "../../lib/progression";
 import { resolveSlotState, stampSlotState } from "../../lib/slot-identity";
 import { sessionCredit, type NodeCredit, type SessionCredit } from "../../lib/credit";
+import { goalRelevantIds } from "../../lib/goal";
 import { athleteSessions, effectiveStepIndex, skillStatuses, slotById } from "../../lib/selectors";
 import { SECTORS } from "../sectors";
 import RestTimer from "../components/RestTimer";
@@ -345,7 +346,10 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
           <div>
             <h2 className="text-xl font-bold mb-1">Session saved</h2>
             <p className="text-ink-2 text-sm mb-4">{summary.setCount} sets logged for {athlete.name}.</p>
-            <CreditSummary credit={summary.credit} />
+            <CreditSummary
+              credit={summary.credit}
+              goalClosure={athleteState.goal ? goalRelevantIds(athleteState.goal.nodeId) : undefined}
+            />
             <div className="flex flex-col gap-2">
               {summary.events.length === 0 && (
                 <p className="text-ink-3 text-sm">Keep stacking sessions — hit every set target twice in a row to advance a chain step.</p>
@@ -369,7 +373,13 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
 }
 
 /** What the session moved in the skill tree — the credit half of the summary. */
-function CreditSummary({ credit }: { credit: SessionCredit }) {
+function CreditSummary({
+  credit,
+  goalClosure,
+}: {
+  credit: SessionCredit;
+  goalClosure?: ReadonlySet<string>;
+}) {
   if (credit.total === 0) {
     return (
       <p className="text-ink-3 text-sm mb-3">
@@ -404,6 +414,7 @@ function CreditSummary({ credit }: { credit: SessionCredit }) {
             <span className={r.kind === "achieved" ? "text-ink-1 font-medium" : "text-ink-2"}>
               {r.name}
             </span>
+            {goalClosure?.has(r.nodeId) && <span style={{ color: "#e8b23a" }}>★</span>}
             {r.to !== undefined && (
               <span className="text-ink-3 text-xs nums ml-auto">
                 {r.from !== undefined && r.from > 0 ? `${round1(r.from)} → ` : ""}
