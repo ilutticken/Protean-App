@@ -8,3 +8,12 @@ createRoot(document.getElementById("root")!).render(
     <App />
   </StrictMode>,
 );
+
+// Offline support (public/sw.js). PROD only: a SW in dev would fight Vite's HMR.
+if (import.meta.env.PROD && "serviceWorker" in navigator) {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("/sw.js").catch(() => {
+      // Registration failing (old browser, storage pressure) only costs offline mode.
+    });
+  });
+}

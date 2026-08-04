@@ -203,7 +203,13 @@ export default function PlanScreen() {
         </div>
         <div className="flex gap-2">
           <button
-            onClick={() => exportJson(data)}
+            onClick={() => {
+              exportJson(data);
+              store.update((d) => ({
+                ...d,
+                settings: { ...d.settings, lastBackupISO: localISODate() },
+              }));
+            }}
             className="flex-1 rounded-lg border border-line bg-surface-2 px-3 py-2.5 text-sm"
           >
             ⬇ Export backup

@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import type { ChainStep, DayId, EntryLog, SessionLog, SetLog, Slot } from "../../lib/types";
 import { seedPlan } from "../../data/seed-plan";
 import { plan as prescribedPlan } from "../../data/prescription";
@@ -98,6 +98,34 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
         : { ...seedPlan.config, saStepRateLimitDays: 0 },
     [data.settings.tendonPacing],
   );
+
+  // Keep the screen awake for the whole session — a phone that locks mid-set hides
+  // the rest timer and the set targets. Reacquired on tab return because Android
+  // releases the sentinel whenever the page is hidden. Failure is fine: the app
+  // works identically, the screen just dims on the gym timer.
+  useEffect(() => {
+    let sentinel: WakeLockSentinel | null = null;
+    let disposed = false;
+    const acquire = async () => {
+      try {
+        if (!disposed && "wakeLock" in navigator && document.visibilityState === "visible") {
+          sentinel = await navigator.wakeLock.request("screen");
+        }
+      } catch {
+        /* unsupported / battery saver — non-essential */
+      }
+    };
+    acquire();
+    const onVis = () => {
+      if (document.visibilityState === "visible") acquire();
+    };
+    document.addEventListener("visibilitychange", onVis);
+    return () => {
+      disposed = true;
+      document.removeEventListener("visibilitychange", onVis);
+      sentinel?.release().catch(() => {});
+    };
+  }, []);
 
   const isoPattern = seedPlan.iso.patternByDay[dayId];
   const isoAngles = isoPattern ? seedPlan.iso.anglePresetsDeg[isoPattern] : undefined;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { migrate, SCHEMA_VERSION } from "./storage";
+import { backupDue, BACKUP_NUDGE_DAYS, migrate, SCHEMA_VERSION } from "./storage";
 import type { Athlete } from "./types";
 
 const male: Athlete = {
@@ -109,5 +109,26 @@ describe("migrate — forward compatibility", () => {
     expect(d.tests).toEqual([]);
     expect(d.state.slotState).toEqual({});
     expect(d.settings.theme).toBe("dark");
+  });
+});
+
+describe("backupDue — the entire data-loss story", () => {
+  it("never nags an empty install", () => {
+    expect(backupDue(undefined, "2026-08-04", false)).toBe(false);
+  });
+
+  it("nags immediately once there is data and no backup was ever taken", () => {
+    expect(backupDue(undefined, "2026-08-04", true)).toBe(true);
+  });
+
+  it("stays quiet inside the cadence window", () => {
+    expect(backupDue("2026-08-01", "2026-08-04", true)).toBe(false);
+    expect(backupDue("2026-07-22", "2026-08-04", true)).toBe(false); // 13 days
+  });
+
+  it("nags at exactly the cadence and beyond", () => {
+    expect(BACKUP_NUDGE_DAYS).toBe(14);
+    expect(backupDue("2026-07-21", "2026-08-04", true)).toBe(true); // 14 days
+    expect(backupDue("2026-01-01", "2026-08-04", true)).toBe(true);
   });
 });

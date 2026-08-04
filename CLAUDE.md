@@ -51,6 +51,9 @@ skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, 
   `src/data/skills-ext/<sector>.ts` using the constructors in `src/data/skill-helpers.ts`.
   Extensions may use negative rings for pre-hub beginner content and `rewire` to splice
   prereqs onto existing nodes; `buildSkills()` merges and normalizes rings per sector.
-- Hosting: `docs/HOSTING.md` (static site, `netlify.toml` committed).
+- Hosting: `docs/HOSTING.md` (static site, `netlify.toml` committed). PWA: `public/`
+  holds manifest + icons + a hand-rolled `sw.js` (no workbox); SW registered PROD-only;
+  never long-cache /sw.js. Workout holds a screen wake lock. Exports stamp
+  `settings.lastBackupISO`; Today nags at 14 days via `backupDue()`.
 - `reference_mat/` holds the user's original PDF + hex-map image; `docs/protean-routine-source.md`
   is the faithful transcription.

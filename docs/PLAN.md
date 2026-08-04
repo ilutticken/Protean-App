@@ -63,6 +63,18 @@ science-backed strength/performance estimates, and a stunt skill tree.
       prefer adding a new id and leaving the old one in place.
     - **Migrations archive, never drop** — see `AppData.archived`, written by v1 → v2.
 
+**Gym-phone PWA** (2026-08-04, athlete-directed — both athletes on Android): installable
+(`public/manifest.webmanifest` + rendered PNG icons 192/512/maskable, standalone display) and
+offline-capable via a hand-rolled `public/sw.js` (no workbox, same convention as no chart lib):
+navigations network-first with cached-shell fallback — a deploy propagates on the next online
+load with no version dance — and hashed /assets/ cache-first. The SW never touches athlete data
+(localStorage). Registered PROD-only in `main.tsx`; `netlify.toml` serves /sw.js `no-cache`.
+Workout screen holds a screen wake lock (reacquired on tab return; failure is non-essential).
+Backup nudge: `settings.lastBackupISO` is stamped on every export; Today nags at 14 days
+(`backupDue()` in storage.ts, tested) — localStorage on one phone is the only copy of the data,
+so the nudge is the entire data-loss story. Verified headless: offline reload boots with data
+intact, offline tab navigation works, export download fires and clears the nudge.
+
 **Goal mode** (2026-08-04, PLAN-GENERATOR.md Phase 3 — shipped): `AthleteState.goal` stores one
 starred stunt. `src/lib/goal.ts` is the pure engine: `prereqClosure` (route on the map),
 `goalRelevantIds` (closure + the goal's own id-namespace line — sibling drills like the FL

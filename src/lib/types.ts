@@ -356,6 +356,8 @@ export interface AppData {
   tests: TestResult[];
   settings: {
     theme: "dark" | "light";
+    /** Date of the last JSON export — drives the Today backup nudge. */
+    lastBackupISO?: string;
     /**
      * How the straight-arm (`sa`) 21-day step rate limit behaves.
      *  - "advisory" (default): the warning is shown, advancement is never blocked.

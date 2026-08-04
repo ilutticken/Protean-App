@@ -1,4 +1,12 @@
-# Hosting Protean
+# Hosting
+
+## Putting it on your phone (Android)
+
+Open the site in Chrome → ⋮ menu → **Add to Home screen** (or "Install app"). It launches
+full-screen like a native app, works with no signal at the gym, and keeps the screen awake
+during a workout. Data lives on the phone — use the Today screen's backup nudge (or
+Plan → Export backup) every couple of weeks; the export is a JSON file you can restore
+anywhere via Plan → Import. Protean
 
 Protean is a **static site with no backend** — no server, no database, no API keys. Every byte of
 your training data stays in your browser's local storage. That makes it free and trivial to host

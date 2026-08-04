@@ -135,6 +135,26 @@ export function save(data: AppData): boolean {
   }
 }
 
+/** Nudge cadence: two missed weekly sessions of history is real loss. */
+export const BACKUP_NUDGE_DAYS = 14;
+
+/**
+ * Should Today nag about exporting? Only when there is something to lose, and
+ * either no backup was ever taken or the last one is older than the cadence.
+ * localStorage on one phone is the ONLY copy of the data — this nudge is the
+ * entire data-loss story, so it must not be cute about it.
+ */
+export function backupDue(
+  lastBackupISO: string | undefined,
+  todayISO: string,
+  hasAnyData: boolean,
+): boolean {
+  if (!hasAnyData) return false;
+  if (!lastBackupISO) return true;
+  const ms = Date.parse(todayISO) - Date.parse(lastBackupISO);
+  return ms >= BACKUP_NUDGE_DAYS * 86400e3;
+}
+
 export function exportJson(data: AppData): void {
   const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
   const url = URL.createObjectURL(blob);

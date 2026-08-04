@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import type { DayId } from "../../lib/types";
 import { seedPlan } from "../../data/seed-plan";
 import { useApp } from "../../lib/useAppData";
+import { backupDue, exportJson } from "../../lib/storage";
 import { nextDayId, prFeed, weeklyStreak, athleteSessions, skillStatuses } from "../../lib/selectors";
 import { goalPath } from "../../lib/goal";
 import { deloadCheck } from "../../lib/progression";
@@ -16,15 +17,15 @@ const DAY_LABEL: Record<DayId, string> = {
 };
 
 const DAY_BLURB: Record<DayId, string> = {
-  legs: "Pistols, hinges, jumps, carries — 12 slots",
-  pull: "Rope, rows, levers, pull-ups — 9 slots",
-  push: "Dips, handstands, planche work — 9 slots",
-  fullbody: "Power, carries, boxing rounds — 11 slots",
+  legs: "Pistols, hinge, cossacks, carry — 6 exercises",
+  pull: "Rows, levers, pull-ups, grip — 6 exercises",
+  push: "Dips, handstands, planche work — 6 exercises",
+  fullbody: "Power, carries, skipping — 6 exercises",
   mobility: "11 holds + meditation, ~15 min",
 };
 
 export default function Today({ onStart }: { onStart: (day: DayId) => void }) {
-  const { data, athlete, athleteState } = useApp();
+  const { data, athlete, athleteState, update } = useApp();
   const todayISO = localISODate();
 
   const planned = useMemo(() => nextDayId(data.sessions, athlete.id), [data.sessions, athlete.id]);
@@ -75,6 +76,32 @@ export default function Today({ onStart }: { onStart: (day: DayId) => void }) {
           ))}
         </div>
       </section>
+
+      {backupDue(data.settings.lastBackupISO, todayISO, data.sessions.length > 0) && (
+        <section className="rounded-2xl bg-surface-1 border border-line p-4 flex items-center gap-3">
+          <span className="text-xl">💾</span>
+          <div className="min-w-0 flex-1">
+            <div className="font-semibold text-sm">Back up your data</div>
+            <p className="text-ink-2 text-xs mt-0.5">
+              {data.settings.lastBackupISO
+                ? `Last export ${data.settings.lastBackupISO} — this phone is the only copy.`
+                : "Never exported — this phone is the only copy of your training history."}
+            </p>
+          </div>
+          <button
+            onClick={() => {
+              exportJson(data);
+              update((d) => ({
+                ...d,
+                settings: { ...d.settings, lastBackupISO: todayISO },
+              }));
+            }}
+            className="shrink-0 rounded-lg border border-line bg-surface-2 px-3 py-2 text-sm"
+          >
+            Export
+          </button>
+        </section>
+      )}
 
       {deload.due && (
         <section className="rounded-2xl bg-surface-1 border border-line p-4 flex gap-3">
