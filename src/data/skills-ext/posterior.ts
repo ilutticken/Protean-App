@@ -20,7 +20,7 @@
 // buildSkills() normalizes the sector so the lowest ring (-7) becomes 0.
 
 import type { SectorExtension } from "../skill-helpers";
-import { e1rmRatio, hold, node, reps, wreps } from "../skill-helpers";
+import { composite, dotsScore, e1rmRatio, hold, node, reps, totalKg, totalRatio, wreps } from "../skill-helpers";
 
 export const posteriorExt: SectorExtension = {
   nodes: [
@@ -168,6 +168,63 @@ export const posteriorExt: SectorExtension = {
     ], {
       isStunt: true, evidence: "D", estMonths: [24, 48],
       description: "Stand a loaded bar on one end, tip it onto your back, squat it, and reverse the whole thing — no rack at any point. Henry Steinborn's lift, and probably the most spectacular thing a barbell can be made to do. ♀ criterion 0.78×BW.",
+    }),
+
+    // ------------------------------------------- powerlifting scoreboard
+    // The sport's actual metric. Every rung reads the squat + bench + deadlift e1RM
+    // total, so the three barbell ladders finally converge somewhere instead of
+    // running in parallel forever. Needs all three lifts logged â a partial total
+    // would silently under-report.
+    //
+    // The ÃBW rungs are self-defining: they make no claim about a population. DOTS is
+    // the sex- and bodyweight-normalized score, so two athletes of different size and
+    // sex compare directly; its 300/400/500 bands are conventional community bands
+    // (evidence D), NOT a validated table like StrengthLevel.
+    node("powerlifting.total_4x", "SBD Total 4×BW", "posterior", 1, totalRatio(4), [
+      "barbell_squat.1_0xbw",
+      "barbell_bench.1_0xbw",
+      "barbell_deadlift.1_5xbw",
+    ], { evidence: "D", description: "Squat + bench + deadlift adding to four times what you weigh. The first total worth writing down. ♀ criterion 3.0×BW." }),
+    node("powerlifting.dots_300", "DOTS 300", "posterior", 1.5, dotsScore(300), [
+      "powerlifting.total_4x",
+    ], { evidence: "D", description: "DOTS normalizes the total for bodyweight AND sex, so a 60 kg woman and a 90 kg man with the same score are equally strong. 300 is a solid intermediate lifter." }),
+    node("powerlifting.total_5x", "SBD Total 5×BW", "posterior", 2, totalRatio(5), [
+      "powerlifting.total_4x",
+    ], { evidence: "D", description: "Five times bodyweight across the three lifts. ♀ criterion 3.7×BW." }),
+    node("powerlifting.club_1000lb", "1000 lb Club", "posterior", 2.5, totalKg(453.6), [
+      "powerlifting.total_4x",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [24, 60],
+      description: "453.6 kg across squat, bench and deadlift — the oldest named club in the gym. Absolute, not relative: no bodyweight adjustment, which is exactly the point of it.",
+    }),
+    node("powerlifting.dots_400", "DOTS 400", "posterior", 3, dotsScore(400), [
+      "powerlifting.dots_300",
+      "powerlifting.total_5x",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [36, 72],
+      description: "Advanced on the normalized score — competitive at a local meet in most federations.",
+    }),
+    node("powerlifting.total_6x", "SBD Total 6×BW", "posterior", 3.5, totalRatio(6), [
+      "powerlifting.total_5x",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [48, 96],
+      description: "Six times bodyweight. Genuinely rare without a decade behind it. ♀ criterion 4.4×BW.",
+    }),
+    node("powerlifting.dots_500", "DOTS 500", "posterior", 4.5, dotsScore(500), [
+      "powerlifting.dots_400",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [72, 144],
+      description: "National-class territory. The number, not the kilos — which is why it is the fairest scoreboard in the app.",
+    }),
+
+    // ----------------------------------------------- hybrid capstone (composite)
+    node("hybrid.total_athlete", "The Complete Lifter", "posterior", 5.5, composite(), [
+      "powerlifting.total_5x",
+      "one_arm_pushup.oap",
+      "front_lever.full",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [48, 120],
+      description: "A five-times-bodyweight total AND a one-arm push-up AND a full front lever. Strength that moves the bar and strength that moves you — almost nobody has both.",
     }),
   ],
 

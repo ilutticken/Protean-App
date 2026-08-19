@@ -110,7 +110,7 @@ describe("cross-reference: skill tree internal consistency", () => {
   it("keys femaleBwRatioOverride by existing ratio-criterion nodes", () => {
     for (const id in femaleBwRatioOverride) {
       expect(skills[id], `femaleBwRatioOverride key ${id} is not a skill node`).toBeDefined();
-      expect(["weighted-reps", "e1rm-ratio"]).toContain(skills[id].criterion.kind);
+      expect(["weighted-reps", "e1rm-ratio", "total-ratio"]).toContain(skills[id].criterion.kind);
     }
   });
 

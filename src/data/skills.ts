@@ -180,6 +180,14 @@ export const femaleBwRatioOverride: Record<string, number> = {
   "dip.weighted_bw": 0.7,
   "one_arm_pullup.wpu_100pct": 0.7,
   "pull.weighted_muscleup": 0.175,
+
+  // --- Powerlifting totals ------------------------------------------------------------
+  // x0.74: the volume-weighted blend of this table's own per-lift multipliers
+  // (squat x0.72, bench x0.70, deadlift x0.78). DOTS needs no entry here - it IS the
+  // sex normalization, which is exactly why it is the fairest rung in the app.
+  "powerlifting.total_4x": 3.0,
+  "powerlifting.total_5x": 3.7,
+  "powerlifting.total_6x": 4.4,
   "barbell_squat.0_75xbw": 0.54, // ×0.72, cf. 1_0xbw 0.72 — without this ♀ 0.75x gates ABOVE ♀ 1.0x
   "barbell_deadlift.1_0xbw": 0.78, // ×0.78, cf. 1_5xbw 1.17 / 2_0xbw 1.5
   "barbell_deadlift.1_25xbw": 0.975,

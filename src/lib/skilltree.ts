@@ -6,6 +6,7 @@
 
 import type { Sector, Sex, SkillNode, SkillProgress, SkillStatus } from "./types";
 import { femaleBwRatioOverride, locomotionTimeBySex } from "../data/skills";
+import { dots } from "./strength";
 
 /** Best logged results toward criteria, aggregated per canonical exercise/node id. */
 /** One session's set values for a single exercise. */
@@ -86,6 +87,19 @@ function countsInOneSession(
 
 // True when logged data satisfies the node's criterion (doc 01 §6 unlock criteria).
 // Attested criteria never auto-satisfy (addendum-1 §0 NO_AUTO_UNLOCK).
+/**
+ * Squat + bench + deadlift e1RM, or null when any of the three is missing. A partial
+ * total is worse than no total: it would silently under-report and could never be
+ * distinguished from a genuinely light lifter.
+ */
+function sbdTotalKg(input: SkillTreeInput): number | null {
+  const s = input.e1rmByLift.squat;
+  const b = input.e1rmByLift.bench;
+  const d = input.e1rmByLift.deadlift;
+  if (s === undefined || b === undefined || d === undefined) return null;
+  return s + b + d;
+}
+
 function criterionMet(node: SkillNode, input: SkillTreeInput): boolean {
   const c = node.criterion;
   const b = input.bestByExercise[node.id];
@@ -127,6 +141,23 @@ function criterionMet(node: SkillNode, input: SkillTreeInput): boolean {
     }
     case "distance":
       return (input.locomotionBest?.[node.id] ?? 0) >= c.meters;
+    case "total-ratio": {
+      const t = sbdTotalKg(input);
+      const ratio = effectiveBwRatio(node.id, c.bwRatio, input.sex);
+      return t !== null && input.bodyweightKg > 0 && t >= ratio * input.bodyweightKg;
+    }
+    case "total-kg": {
+      const t = sbdTotalKg(input);
+      return t !== null && t >= c.totalKg;
+    }
+    case "dots": {
+      const t = sbdTotalKg(input);
+      return t !== null && dots(input.sex, input.bodyweightKg, t) >= c.score;
+    }
+    // Composite nodes have no measurement — computeSkillStatuses resolves them from
+    // their prerequisites after this pass.
+    case "composite":
+      return false;
     case "attested":
       return false;
   }
@@ -152,6 +183,17 @@ function bestToward(node: SkillNode, input: SkillTreeInput): number | undefined 
     case "time":
     case "distance":
       return input.locomotionBest?.[node.id];
+    case "total-ratio": {
+      const t = sbdTotalKg(input);
+      return t !== null && input.bodyweightKg > 0 ? t / input.bodyweightKg : undefined;
+    }
+    case "total-kg":
+      return sbdTotalKg(input) ?? undefined;
+    case "dots": {
+      const t = sbdTotalKg(input);
+      return t !== null ? dots(input.sex, input.bodyweightKg, t) : undefined;
+    }
+    case "composite":
     case "attested":
       return undefined;
   }
@@ -173,6 +215,16 @@ export function computeSkillStatuses(input: SkillTreeInput): Record<string, Skil
     const manualAchieved = m?.status === "achieved" || m?.attestedDate !== undefined;
     const autoAllowed = node.sector !== "balance" && node.criterion.kind !== "attested";
     achieved[id] = manualAchieved || (autoAllowed && criterionMet(node, input));
+  }
+  // Composite badges: achieved when every prerequisite is. Resolved here, in ring
+  // order — skills.test.ts pins "prereq ring < dependent ring" ACROSS sectors, so
+  // ring order is a topological order and one sweep suffices.
+  for (const node of Object.values(input.skills)
+    .filter((n) => n.criterion.kind === "composite" && n.sector !== "balance")
+    .sort((a, b) => a.ring - b.ring)) {
+    if (achieved[node.id]) continue; // manual mark already stands
+    achieved[node.id] =
+      node.prereqs.length > 0 && node.prereqs.every((p) => achieved[p] === true);
   }
   // Pass 2: availability / progress.
   const out: Record<string, SkillProgress> = {};

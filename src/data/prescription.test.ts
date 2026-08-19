@@ -7,6 +7,11 @@ import { describe, expect, it } from "vitest";
 import { seedPlan } from "./seed-plan";
 import {
   CONDITIONING_SLOTS,
+  HEAVY_SLOTS,
+  coreSlotIds,
+  coreSlots,
+  heavySlotCount,
+  isCoreSlot,
   RDYN_SETS,
   RDYN_TARGET,
   isStrengthProgression,
@@ -29,22 +34,31 @@ describe("the PDF transcription is untouched", () => {
     expect(allSeed.every((s) => s.sets === 2 || s.sets === 1 || s.sets === 5)).toBe(true);
   });
 
-  it("keeps the same slots, ids, sectors and chains", () => {
-    expect(allPlan.map((s) => s.id)).toEqual(allSeed.map((s) => s.id));
+  it("keeps every PDF slot, with its sector, chain, type and unit intact", () => {
     for (const s of allSeed) {
       const p = byId.get(s.id)!;
+      expect(p, s.id).toBeDefined();
       expect(p.sector).toBe(s.sector);
       expect(p.chain).toEqual(s.chain);
       expect(p.type).toBe(s.type);
       expect(p.unit).toBe(s.unit);
     }
   });
+
+  it("adds ONLY the heavy barbell slots on top", () => {
+    const extra = allPlan.map((s) => s.id).filter((id) => !allSeed.some((s) => s.id === id));
+    expect(extra.sort()).toEqual(
+      Object.values(HEAVY_SLOTS).flat().map((s) => s.id).sort(),
+    );
+  });
 });
 
 describe("R-DYN conversion", () => {
   it("prescribes 3 sets × 8 on every strength progression", () => {
+    const heavyIds = new Set(Object.values(HEAVY_SLOTS).flat().map((s) => s.id));
     for (const s of allPlan) {
-      if (!isStrengthProgression(s)) continue;
+      // Heavy slots are a 3×5 strength dose (doc 03 §14), not an R-DYN progression.
+      if (heavyIds.has(s.id) || !isStrengthProgression(s)) continue;
       expect(s.sets, s.id).toBe(RDYN_SETS);
       expect(s.tiers, s.id).toEqual([RDYN_TARGET]);
     }
@@ -188,5 +202,96 @@ describe("sets are enforced, not decorative", () => {
       emptyAthleteState(),
     );
     expect(st[id].status).not.toBe("achieved");
+  });
+});
+
+// ---------------------------------------------------------------------------
+
+describe("training regimes", () => {
+  const DAYS = ["legs", "pull", "push", "fullbody"] as const;
+  const REGIMES = ["calisthenic", "balanced", "powerlifting"] as const;
+
+  it("prescribes exactly six exercises a day in every regime", () => {
+    for (const r of REGIMES) {
+      for (const d of DAYS) {
+        expect(coreSlots(d, r).filter((s) => !s.alternativeTo).length, `${r}/${d}`).toBe(6);
+      }
+    }
+  });
+
+  it("calisthenic uses no barbell slots at all", () => {
+    expect(heavySlotCount("calisthenic")).toBe(0);
+    for (const d of DAYS) {
+      expect(coreSlots(d, "calisthenic").filter((s) => s.id.startsWith("heavy-"))).toEqual([]);
+    }
+  });
+
+  it("adds barbell sessions as the lean increases, never volume", () => {
+    expect(heavySlotCount("calisthenic")).toBe(0);
+    expect(heavySlotCount("balanced")).toBe(4);
+    expect(heavySlotCount("powerlifting")).toBe(6);
+    // ...and the exercise count is identical in all three (asserted above).
+  });
+
+  it("every barbell slot REPLACES a same-sector chain slot", () => {
+    for (const r of ["balanced", "powerlifting"] as const) {
+      for (const d of DAYS) {
+        const base = coreSlotIds(d, "calisthenic");
+        const now = coreSlotIds(d, r);
+        const added = now.filter((id) => !base.includes(id));
+        const dropped = base.filter((id) => !now.includes(id));
+        expect(added.length, `${r}/${d}`).toBe(dropped.length);
+        for (const id of added) {
+          const heavy = Object.values(HEAVY_SLOTS).flat().find((s) => s.id === id)!;
+          const replaced = plan.days[d].find((s) => dropped.includes(s.id))!;
+          expect(heavy, id).toBeDefined();
+          expect(replaced, `${id} replaces nothing`).toBeDefined();
+        }
+      }
+    }
+  });
+
+  it("powerlifting covers squat, bench and deadlift across the week", () => {
+    const ids = DAYS.flatMap((d) => coreSlots(d, "powerlifting").map((s) => s.id));
+    for (const need of ["heavy-squat", "heavy-bench", "heavy-deadlift"]) {
+      expect(ids, need).toContain(need);
+    }
+  });
+
+  it("never prescribes the same barbell lift twice in one week", () => {
+    for (const r of REGIMES) {
+      const heavy = DAYS.flatMap((d) => coreSlots(d, r).map((s) => s.id)).filter((id) =>
+        id.startsWith("heavy-"),
+      );
+      expect(new Set(heavy).size, r).toBe(heavy.length);
+    }
+  });
+
+  it("heavy slots are 3×5, and stay out of the R-DYN rep alignment", () => {
+    for (const s of Object.values(HEAVY_SLOTS).flat()) {
+      expect(s.sets, s.id).toBe(3);
+      expect(s.tiers, s.id).toEqual([5]);
+      // The tree must not be dragged to 5 reps by them.
+      for (const step of s.chain) {
+        if (step.ex) expect(rdynRepsByExercise[step.ex], step.ex).not.toBe(5);
+      }
+    }
+  });
+
+  it("isCoreSlot agrees with coreSlots for every slot on every day", () => {
+    for (const r of REGIMES) {
+      for (const d of DAYS) {
+        const core = new Set(coreSlots(d, r).map((s) => s.id));
+        for (const s of plan.days[d]) {
+          expect(isCoreSlot(d, s, r), `${r}/${d}/${s.id}`).toBe(core.has(s.id));
+        }
+      }
+    }
+  });
+
+  it("defaults to the calisthenic lean when none is set", () => {
+    for (const d of DAYS) {
+      expect(coreSlotIds(d)).toEqual(coreSlotIds(d, "calisthenic"));
+    }
   });
 });

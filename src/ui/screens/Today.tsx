@@ -5,6 +5,7 @@ import { useApp } from "../../lib/useAppData";
 import { backupDue, exportJson } from "../../lib/storage";
 import { nextDayId, prFeed, weeklyStreak, athleteSessions, skillStatuses } from "../../lib/selectors";
 import { goalPath } from "../../lib/goal";
+import { coreSlots, REGIME_LABEL } from "../../data/prescription";
 import { deloadCheck } from "../../lib/progression";
 import { localISODate } from "../../lib/dates";
 
@@ -55,6 +56,15 @@ export default function Today({ onStart }: { onStart: (day: DayId) => void }) {
         </div>
         <h1 className="text-3xl font-extrabold mt-1">{DAY_LABEL[planned]}</h1>
         <p className="text-ink-2 text-sm mt-1">{DAY_BLURB[planned]}</p>
+        {planned !== "mobility" && (
+          <p className="text-ink-3 text-xs mt-1">
+            {REGIME_LABEL[athleteState.regime ?? "calisthenic"]} lean ·{" "}
+            {coreSlots(planned, athleteState.regime ?? "calisthenic")
+              .filter((s) => s.id.startsWith("heavy-"))
+              .map((s) => s.chain[0].n)
+              .join(" · ") || "no barbell today"}
+          </p>
+        )}
         <button
           onClick={() => onStart(planned)}
           className="mt-4 rounded-xl px-6 py-3 font-semibold text-surface-0 active:scale-[0.98] transition-transform"

@@ -204,6 +204,18 @@ export type Criterion =
   | { kind: "e1rm-ratio"; liftId: string; bwRatio: number }
   | { kind: "time"; seconds: number; note?: string } // locomotion milestones
   | { kind: "distance"; meters: number; note?: string }
+  // --- powerlifting: read the squat+bench+deadlift e1RM total ---------------------
+  /** SBD total as a multiple of bodyweight. Needs all three lifts logged. */
+  | { kind: "total-ratio"; bwRatio: number }
+  /** SBD total in absolute kg — for named clubs (1000 lb = 453.6 kg). */
+  | { kind: "total-kg"; totalKg: number }
+  /** DOTS score on the SBD total: the sex- and bodyweight-normalized number. */
+  | { kind: "dots"; score: number }
+  /**
+   * Met when EVERY prerequisite is achieved — a cross-discipline badge with no
+   * measurement of its own. Resolved after the main pass in computeSkillStatuses.
+   */
+  | { kind: "composite" }
   | { kind: "attested" }; // NO_AUTO_UNLOCK: user attests (flips, judged skills)
 
 export type EvidenceTier = "A" | "B" | "C" | "D";
@@ -309,6 +321,18 @@ export interface CardioEntry {
   seconds?: number;
 }
 
+/**
+ * How the week leans. Every regime trains BOTH disciplines — all six exercises a day,
+ * the same calisthenics chains underneath. What changes is which lift fills the day's
+ * HEAVY slot (doc 03 §14 prescribes exactly one per day at ≥85% 1RM, 3×3–5):
+ *   calisthenic  — heavy slot is weighted calisthenics (weighted pull-up, dip, pistol)
+ *   balanced     — one barbell lift per day
+ *   powerlifting — two barbell lifts on the days that have two to give
+ * Volume is identical in all three: a barbell slot REPLACES a same-pattern chain slot,
+ * it is never added on top.
+ */
+export type Regime = "calisthenic" | "balanced" | "powerlifting";
+
 /** The active target stunt (goal mode, PLAN-GENERATOR.md Phase 3). One at a time. */
 export interface GoalState {
   nodeId: string;
@@ -328,6 +352,8 @@ export interface AthleteState {
   skillLog?: SkillEntry[];
   /** The stunt currently being chased; drives path highlighting and slot badges. */
   goal?: GoalState;
+  /** Training lean. Absent = "calisthenic" (the PDF routine as written). */
+  regime?: Regime;
 }
 
 /**

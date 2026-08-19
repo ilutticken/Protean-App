@@ -1,7 +1,15 @@
 import { useRef, useState } from "react";
 import type { DayId, Slot } from "../../lib/types";
 import { authorQuestions } from "../../data/seed-plan";
-import { plan as prescribedPlan, CORE_SLOT_COUNT } from "../../data/prescription";
+import {
+  plan as prescribedPlan,
+  CORE_SLOT_COUNT,
+  isCoreSlot,
+  heavySlotCount,
+  REGIME_BLURB,
+  REGIME_LABEL,
+} from "../../data/prescription";
+import type { Regime } from "../../lib/types";
 import { exercises } from "../../data/exercises";
 import { useApp, updateAthlete, updateAthleteState } from "../../lib/useAppData";
 import { exportJson, importJson, save } from "../../lib/storage";
@@ -42,6 +50,7 @@ export default function PlanScreen() {
   const [htFt, setHtFt] = useState("");
   const [htIn, setHtIn] = useState("");
 
+  const regime: Regime = athleteState.regime ?? "calisthenic";
   const slots = prescribedPlan.days[day];
 
   function pickAlternative(baseId: string, altId: string | null) {
@@ -108,6 +117,39 @@ export default function PlanScreen() {
         </span>
       </button>
 
+      {/* Regime picker — the day always has six exercises; this decides which lift
+          fills the heavy slot doc 03 §14 prescribes. */}
+      <section className="rounded-2xl bg-surface-1 border border-line p-4">
+        <div className="flex items-baseline justify-between mb-2">
+          <h2 className="font-semibold text-sm">Training lean</h2>
+          <span className="text-ink-3 text-xs nums">
+            {heavySlotCount(regime)} barbell {heavySlotCount(regime) === 1 ? "session" : "sessions"}/wk
+          </span>
+        </div>
+        <div className="flex gap-1.5">
+          {(["calisthenic", "balanced", "powerlifting"] as Regime[]).map((r) => {
+            const on = regime === r;
+            return (
+              <button
+                key={r}
+                onClick={() => updateAthleteState(store, (s) => ({ ...s, regime: r }))}
+                className={`flex-1 rounded-xl px-2 py-2 text-xs font-semibold border transition-colors ${
+                  on ? "bg-surface-3 text-ink-1" : "bg-surface-2 text-ink-3 border-line"
+                }`}
+                style={on ? { borderColor: athlete.accent, color: athlete.accent } : undefined}
+              >
+                {REGIME_LABEL[r]}
+              </button>
+            );
+          })}
+        </div>
+        <p className="text-ink-2 text-xs mt-2">{REGIME_BLURB[regime]}</p>
+        <p className="text-ink-3 text-[11px] mt-1.5">
+          Every lean trains both. Six exercises a day either way — a barbell lift replaces a
+          same-pattern chain slot, it is never added on top.
+        </p>
+      </section>
+
       <div className="flex gap-1.5">
         {DAYS.map((d) => (
           <button
@@ -137,6 +179,7 @@ export default function PlanScreen() {
                 stateIndex={effectiveStepIndex(shown, resolveSlotState(shown, athleteState.slotState[shown.id])?.stepIndex, statuses)}
                 confirms={athleteState.slotState[shown.id]?.confirmCount ?? 0}
                 feedsGoal={goalClosure ? slotFeedsGoal(shown, goalClosure) : false}
+                optional={!isCoreSlot(day, shown, regime)}
                 alt={
                   altSlot
                     ? { usingAlt: Boolean(usingAlt), toggle: () => pickAlternative(slot.id, usingAlt ? null : altSlot.id) }
@@ -338,6 +381,7 @@ function ChainBoard({
   confirms,
   alt,
   feedsGoal,
+  optional,
 }: {
   slot: Slot;
   accent: string;
@@ -345,6 +389,7 @@ function ChainBoard({
   confirms: number;
   alt?: { usingAlt: boolean; toggle: () => void };
   feedsGoal?: boolean;
+  optional?: boolean;
 }) {
   const hue = SECTORS[slot.sector].hex;
   const inStep = isInStepSlot(slot);
@@ -353,13 +398,13 @@ function ChainBoard({
 
   return (
     <section
-      className={`rounded-2xl bg-surface-1 border border-line p-4 ${slot.optional ? "opacity-60" : ""}`}
+      className={`rounded-2xl bg-surface-1 border border-line p-4 ${optional ? "opacity-60" : ""}`}
       style={{ borderLeft: `3px solid ${hue}` }}
     >
       <div className="flex items-center justify-between gap-2 mb-2">
         <div className="text-[10px] uppercase tracking-wider" style={{ color: hue }}>
           {SECTORS[slot.sector].short} · {slot.id} · {slot.sets} sets
-          {slot.optional && <span className="text-ink-3"> · OPTIONAL</span>}
+          {optional && <span className="text-ink-3"> · OPTIONAL</span>}
           {feedsGoal && <span style={{ color: "#e8b23a" }}> · ★ GOAL</span>}
           {slot.tiers.length === 3 && <span className="nums"> · {slot.tiers.join("/")}</span>}
         </div>

@@ -35,6 +35,16 @@ function criterionText(node: SkillNode, sex: Sex): string {
     }
     case "distance":
       return `${c.meters >= 1000 ? c.meters / 1000 + " km" : c.meters + " m"}${c.note ? ` — ${c.note}` : ""}`;
+    case "total-ratio": {
+      const r = effectiveBwRatio(node.id, c.bwRatio, sex);
+      return `Squat + bench + deadlift total ≥ ${r}× bodyweight`;
+    }
+    case "total-kg":
+      return `Squat + bench + deadlift total ≥ ${Math.round(c.totalKg)} kg`;
+    case "dots":
+      return `DOTS ${c.score} on your SBD total (sex- and weight-normalized)`;
+    case "composite":
+      return "Everything below it — a combination badge";
     case "attested":
       return "Self-attested — no auto-unlock (safety)";
   }
@@ -61,6 +71,10 @@ function LogAttempt({ node }: { node: SkillNode }) {
   if (kind === "attested" || node.sector === "balance") return null;
   if (kind === "time" || kind === "distance") return null; // cardio log owns these
   if (kind === "e1rm-ratio") return null; // quick lift-log owns these
+  // Derived from the barbell lifts (or from other nodes); nothing to log here.
+  if (kind === "total-ratio" || kind === "total-kg" || kind === "dots" || kind === "composite") {
+    return null;
+  }
 
   const isHold = kind === "hold";
   const wantsWeight = kind === "weighted-reps";
@@ -140,6 +154,13 @@ function pctToward(node: SkillNode, p: SkillProgress | undefined, bw: number, se
     }
     case "distance":
       return p.best / c.meters;
+    case "total-ratio":
+      return p.best / effectiveBwRatio(node.id, c.bwRatio, sex);
+    case "total-kg":
+      return p.best / c.totalKg;
+    case "dots":
+      return p.best / c.score;
+    case "composite":
     case "attested":
       return 0;
   }

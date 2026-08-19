@@ -189,6 +189,43 @@ export const pushupExt: SectorExtension = {
       evidence: "D",
       description: "One 60 s hold at the mid-range of a band press. Seed exercise (push-09).",
     }),
+
+    // ------------------------------------------- on-ramp lateral variants
+    // The beginner ladder was single-file: wall -> counter -> knee -> incline, with
+    // nothing to do AT a level. These are same-difficulty variations — hand width and
+    // stance change which muscles do the work without changing the leverage much, so
+    // they add weeks of useful variety at the bottom of the sector.
+    node("pushup_base.wall_wide", "Wall Wide Push-Up", S, -0.85, reps(12, 3), ["pushup_base.wall_pushup"], {
+      evidence: "D",
+      description: "Hands wider than the shoulders against the wall — more chest, less triceps, same leverage as the standard wall push-up.",
+    }),
+    node("pushup_base.wall_close", "Wall Close Push-Up", S, -0.85, reps(12, 3), ["pushup_base.wall_pushup"], {
+      evidence: "D",
+      description: "Hands inside shoulder width, elbows brushing the ribs — the triceps-biased twin of the wall push-up.",
+    }),
+    node("pushup_base.wall_stagger", "Wall Stagger Push-Up", S, -0.8, reps(8, 3, true), ["pushup_base.wall_wide"], {
+      evidence: "D",
+      description: "One hand high, one low — 3×8 per side. The first taste of uneven loading, years before an actual one-arm push-up.",
+    }),
+    node("pushup_base.counter_wide", "Wide Counter Push-Up", S, -0.75, reps(12, 3), ["pushup_base.counter_pushup"], {
+      evidence: "D", description: "Wide hands on a counter or table edge.",
+    }),
+    node("pushup_base.counter_close", "Close Counter Push-Up", S, -0.75, reps(12, 3), ["pushup_base.counter_pushup"], {
+      evidence: "D", description: "Narrow hands on a counter — the first genuinely triceps-dominant rung.",
+    }),
+    node("pushup_base.knee_wide", "Wide Knee Push-Up", S, -0.65, reps(12, 3), ["push.pushup_knees"], {
+      evidence: "D", description: "Knee push-up with wide hands.",
+    }),
+    node("pushup_base.knee_diamond", "Knee Diamond Push-Up", S, -0.6, reps(8, 3), ["push.pushup_knees"], {
+      evidence: "D",
+      description: "Index fingers and thumbs touching, on the knees — the on-ramp to the diamond push-up proper.",
+    }),
+    node("pushup_base.incline_wide", "Wide Incline Push-Up", S, -0.55, reps(12, 3), ["push.pushup_incline"], {
+      evidence: "D", description: "Hands wide on a bench or bar.",
+    }),
+    node("pushup_base.incline_close", "Close Incline Push-Up", S, -0.5, reps(10, 3), ["push.pushup_incline"], {
+      evidence: "D", description: "Hands narrow on a bench — the last rung before floor diamond work.",
+    }),
   ],
 
   // Splice the new easier work beneath the already-authored hubs. Every added prereq has a

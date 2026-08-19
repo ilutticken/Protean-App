@@ -144,7 +144,7 @@ describe("skill tree structure", () => {
   it("every femaleBwRatioOverride id exists and has a ratio-based criterion", () => {
     for (const id of Object.keys(femaleBwRatioOverride)) {
       expect(skills[id], `override id ${id} not in tree`).toBeDefined();
-      expect(["e1rm-ratio", "weighted-reps"]).toContain(skills[id].criterion.kind);
+      expect(["e1rm-ratio", "weighted-reps", "total-ratio"]).toContain(skills[id].criterion.kind);
     }
   });
 });

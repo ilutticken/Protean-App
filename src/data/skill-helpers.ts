@@ -38,6 +38,18 @@ export const distanceOf = (meters: number, note?: string): Criterion => ({
 });
 
 /** NO_AUTO_UNLOCK (addendum-1 §0): user attestation is the only unlock path. */
+/** Squat+bench+deadlift e1RM total as a multiple of bodyweight. */
+export const totalRatio = (bwRatio: number): Criterion => ({ kind: "total-ratio", bwRatio });
+
+/** SBD total in absolute kg — named clubs. */
+export const totalKg = (kg: number): Criterion => ({ kind: "total-kg", totalKg: kg });
+
+/** DOTS score on the SBD total: sex- and bodyweight-normalized. */
+export const dotsScore = (score: number): Criterion => ({ kind: "dots", score });
+
+/** No measurement of its own — achieved when every prerequisite is. */
+export const composite = (): Criterion => ({ kind: "composite" });
+
 export const ATTESTED: Criterion = { kind: "attested" };
 
 export type NodeExtras = Partial<

@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { ChainStep, DayId, EntryLog, SessionLog, SetLog, Slot } from "../../lib/types";
 import { seedPlan } from "../../data/seed-plan";
-import { plan as prescribedPlan } from "../../data/prescription";
+import { coreSlots } from "../../data/prescription";
 import { exercises } from "../../data/exercises";
 import { useApp, updateAthleteState } from "../../lib/useAppData";
 import { applySession, ghost, restSuggestion, targetFor, type ProgressionEvent } from "../../lib/progression";
@@ -30,7 +30,7 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
     if (dayId === "mobility") return [];
     // Six exercises per day (prescription.ts CORE_SLOTS); the rest are `optional` and
     // live on the Plan screen.
-    const all = prescribedPlan.days[dayId].filter((s) => !s.optional);
+    const all = coreSlots(dayId, athleteState.regime ?? "calisthenic");
     return all.filter((s) => {
       if (!s.alternativeTo) {
         // hidden when the athlete picked its alternative
@@ -41,7 +41,7 @@ export default function Workout({ dayId, onExit }: { dayId: DayId; onExit: () =>
       }
       return athleteState.slotAlternatives[s.alternativeTo] === s.id;
     });
-  }, [dayId, athleteState.slotAlternatives]);
+  }, [dayId, athleteState.slotAlternatives, athleteState.regime]);
 
   // last logged entry per slot (ghost source)
   const lastEntryBySlot = useMemo(() => {

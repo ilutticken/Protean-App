@@ -328,6 +328,25 @@ export const squatExt: SectorExtension = {
       evidence: "D",
       description: "Bar carried in the crook of the elbows. Brutal on the upper back, and the only squat variant that actively fights spinal flexion. The bruises are part of it.",
     }),
+
+    // ------------------------------------------- on-ramp lateral variants
+    // Stance and tempo variations on the air squat: same difficulty, different demand,
+    // and a way to spend useful weeks at the bottom of the sector.
+    node("squat_base.sumo_squat", "Sumo Air Squat", "squat", -2.8, reps(15, 3), ["squat.air_squat"], {
+      evidence: "D",
+      description: "Wide stance, toes out — more adductor and glute, and far kinder to stiff ankles than a narrow squat.",
+    }),
+    node("squat_base.narrow_squat", "Narrow Air Squat", "squat", -2.8, reps(15, 3), ["squat.air_squat"], {
+      evidence: "D", description: "Feet together. Quad-dominant, and a real ankle-mobility test.",
+    }),
+    node("squat_base.heels_elevated", "Heels-Up Squat", "squat", -2.8, reps(15, 3), ["squat.air_squat"], {
+      evidence: "D",
+      description: "Heels on a book or a plate. Lets a stiff ankle reach depth today while the mobility catches up.",
+    }),
+    node("squat_base.tempo_squat", "Tempo Air Squat", "squat", -2.7, reps(8, 3), ["squat.air_squat"], {
+      evidence: "D",
+      description: "3 s down, 1 s pause, 1 s up — 3×8. Time under tension with no load, and the fastest way to find where the squat actually fails.",
+    }),
   ],
 
   // Splice the new easier work beneath the hubs that skills.ts already owns.

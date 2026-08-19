@@ -35,10 +35,16 @@ const creditIndex: Record<string, string[]> = (() => {
   for (const id of Object.keys(skills)) add(id, id); // 1. direct
   for (const [nodeId, exerciseId] of Object.entries(skillExerciseAlias)) add(exerciseId, nodeId); // 2. alias
 
-  // 3. e1RM — one logged barbell set feeds every ratio rung on that lift.
+  // 3. e1RM — one logged barbell set feeds every ratio rung on that lift, AND every
+  //    rung that reads the squat+bench+deadlift total (which is computed from them).
   const nodesByLift: Record<string, string[]> = {};
+  const totalNodes: string[] = [];
   for (const n of Object.values(skills)) {
     if (n.criterion.kind === "e1rm-ratio") (nodesByLift[n.criterion.liftId] ??= []).push(n.id);
+    else if (["total-ratio", "total-kg", "dots"].includes(n.criterion.kind)) totalNodes.push(n.id);
+  }
+  for (const lift of ["squat", "bench", "deadlift"]) {
+    (nodesByLift[lift] ??= []).push(...totalNodes);
   }
   for (const [exerciseId, stdKey] of Object.entries(standardsKeyByExercise)) {
     const liftId = TREE_LIFT_BY_STANDARDS_KEY[stdKey];
@@ -81,7 +87,14 @@ export function creditedNodes(exerciseId: string): SkillNode[] {
   return nodesCreditedBy(exerciseId)
     .map((id) => skills[id])
     .filter((n): n is SkillNode => Boolean(n) && autoMarkable(n))
-    .sort((a, b) => Number(Boolean(b.isStunt)) - Number(Boolean(a.isStunt)) || b.ring - a.ring);
+    // Stunts first, then NEAREST first (lowest ring). A slot's "feeds" line should
+    // answer "what is this exercise for?" with the next thing it moves — a barbell
+    // squat feeds DOTS 500 too, but advertising that to someone who has never benched
+    // is noise. The nearest rung is the useful answer.
+    .sort(
+      (a, b) =>
+        Number(Boolean(b.isStunt)) - Number(Boolean(a.isStunt)) || a.ring - b.ring,
+    );
 }
 
 // ---------------------------------------------------------------------------

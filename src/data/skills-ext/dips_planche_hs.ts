@@ -24,7 +24,7 @@
 // RINGS: -3 is this sector's floor, so buildSkills shifts this sector by exactly +3. That value
 // is NOT free — see the integrator note at the bottom of the file.
 
-import { hold, node, reps, wreps, e1rmRatio, type SectorExtension } from "../skill-helpers";
+import { composite, hold, node, reps, wreps, e1rmRatio, type SectorExtension } from "../skill-helpers";
 
 const S = "dips_planche_hs" as const;
 
@@ -277,6 +277,15 @@ export const dipsPlancheHsExt: SectorExtension = {
     node("dip.weighted_bw", "Weighted Dip +100%", S, 4, wreps(1, 1), ["dip.weighted_half_bw"], {
       isStunt: true, evidence: "D", estMonths: [24, 48],
       description: "A dip with a second bodyweight hanging from the belt — 2× bodyweight moving in total. ♀ criterion 0.70×BW added.",
+    }),
+
+    // ------------------------------------------------------- hybrid badge
+    node("hybrid.overhead_complete", "Overhead Complete", S, 4, composite(), [
+      "barbell_ohp.1_0xbw",
+      "dip.weighted_half_bw",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [18, 42],
+      description: "Press your own bodyweight overhead AND dip with half of it hanging off you. Vertical pushing, loaded from both directions.",
     }),
   ],
 

@@ -127,6 +127,39 @@ skips achieved steps; the result is min()'d with the stored progression, so the 
 never regressed to something they have proven. A step with `opts` only counts as done when
 EVERY option is achieved. In-step slots are exempt (stepIndex is a T-index there).
 
+**Training regimes** (2026-08-05, athlete-directed — one athlete prefers powerlifting):
+`AthleteState.regime` is `calisthenic` (default) | `balanced` | `powerlifting`. Every regime
+trains BOTH disciplines and prescribes the same **six exercises a day**; what changes is which
+lift fills the day's HEAVY slot. That slot is not an invention — doc 03 §14's session template
+gives every training day "1 heavy squat/hinge @85%+ (3×3–5)", and §6 states plainly that the
+routine's low-load tiers "will build size and endurance fine, but the 2× bodyweight lift goal
+requires dedicated ≥85% work that must be added explicitly". The app never had it.
+
+`HEAVY_SLOTS` in `prescription.ts` defines six barbell slots at **3×5** (a strength dose, not
+R-DYN's 3×8 — and explicitly excluded from `rdynRepsByExercise` so they cannot drag the tree's
+rep criteria down to 5). `SWAPS` maps each onto the same-pattern chain slot it REPLACES, so
+volume is identical across regimes: calisthenic 0 barbell sessions/wk, balanced 4, powerlifting
+6. `plan` now carries ALL slots in every regime — `slotById` and the stored-progress map are
+built from it, so a slot logged under one regime still resolves after switching. `optional` is
+no longer baked into the slot; `isCoreSlot(dayId, slot, regime)` computes it at render time.
+
+Emergent win: because a heavy slot logs `barbell.back_squat` like any other exercise, barbell
+work done IN THE WORKOUT now feeds e1RM, the StrengthLevel level, the radar and the SBD total —
+previously those numbers could only come from the quick lift-log.
+
+**Powerlifting scoreboard + hybrid badges** (2026-08-05): four new criterion kinds —
+`total-ratio` (SBD e1RM total as ×BW), `total-kg` (named clubs), `dots` (the sex- and
+bodyweight-normalized score), and `composite` (no measurement of its own; achieved when every
+prerequisite is). All four read the squat+bench+deadlift total, which is **null unless all
+three lifts are logged** — a partial total would silently under-report. Composites resolve in a
+second sweep of `computeSkillStatuses` in ring order, which is a valid topological order because
+skills.test.ts pins "prereq ring < dependent ring" across sectors.
+
+The ×BW rungs are self-defining and make no population claim; the DOTS 300/400/500 bands are
+conventional community bands (evidence D), NOT a validated table — the corpus has the DOTS
+formula but no interpretation bands. DOTS needs no `femaleBwRatioOverride` entry because it IS
+the sex normalization: a 90 kg man at 520 kg and a 62 kg woman at 310 kg both score ~336.
+
 **Skill-practice log** (2026-08-03, Phase 2): the routine has three hold slots against a tree
 with ~100 hold nodes, so most skill work (planche leans, tuck front levers, wall handstands) had
 nowhere to be recorded and ~259 measurable nodes could never move. `AthleteState.skillLog` records

@@ -35,7 +35,7 @@
 // hinge.glute_bridge_unilateral) are posterior-sector rows.
 
 import type { SectorExtension } from "../skill-helpers";
-import { hold, node, reps, wreps } from "../skill-helpers";
+import { composite, hold, node, reps, wreps } from "../skill-helpers";
 
 const S = "back_chain" as const;
 
@@ -215,6 +215,17 @@ export const backChainExt: SectorExtension = {
     node("clean_jerk.1_5xbw", "Clean & Jerk 1.5×BW", S, 3.5, wreps(1, 1.5), ["clean_jerk.bw"], {
       isStunt: true, evidence: "D", estMonths: [36, 72],
       description: "1.5× bodyweight overhead. National-level territory in most weight classes. ♀ criterion 1.2×BW.",
+    }),
+
+    // ------------------------------------------------------- hybrid badge
+    // Composite: no measurement of its own, achieved when everything under it is.
+    node("hybrid.iron_athlete", "Iron Athlete", S, 6, composite(), [
+      "barbell_deadlift.2_0xbw",
+      "one_arm_pullup.pullup10",
+      "barbell_bench.1_0xbw",
+    ], {
+      isStunt: true, evidence: "D", estMonths: [18, 48],
+      description: "Double-bodyweight deadlift, ten strict pull-ups, and a bodyweight bench — all standing at once. The classic proof you skipped neither half of the gym.",
     }),
   ],
 

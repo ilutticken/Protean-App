@@ -41,8 +41,17 @@ skill-tree stunt tracker. React 19 + TypeScript + Vite + Tailwind 4, no router, 
 - Goal mode: `AthleteState.goal` + `src/lib/goal.ts`. Map/route uses strict `prereqClosure`;
   badges and the Stats set-rate use `goalRelevantIds` (closure + goal's own line). Progress is
   always "steps remaining", never a date. Goal mode never adds volume.
-- A workout is **6 exercises** — `CORE_SLOTS` in `prescription.ts`; the rest carry
-  `Slot.optional` and appear only on the Plan screen. Read the session via `coreSlots(dayId)`.
+- Training regimes: `AthleteState.regime` (calisthenic | balanced | powerlifting). All three
+  prescribe six exercises a day; the regime picks which lift fills the day's heavy slot
+  (`HEAVY_SLOTS`/`SWAPS` in `prescription.ts`, 3×5 per doc 03 §14 — never R-DYN's 3×8, and kept
+  out of `rdynRepsByExercise`). A barbell slot REPLACES a same-pattern chain slot, never adds.
+  `plan` holds every slot in every regime; `isCoreSlot()` decides what is prescribed today.
+- Powerlifting criteria (`total-ratio`, `total-kg`, `dots`) read the SBD e1RM total and are
+  **null unless all three lifts are logged**. `composite` nodes have no measurement — they are
+  achieved when every prereq is, resolved in a second ring-ordered sweep of computeSkillStatuses.
+- A workout is **6 exercises** — `CORE_SLOTS` in `prescription.ts`. Read the session via
+  `coreSlots(dayId, regime)`; the rest appear only on the Plan screen, marked optional at
+  render time by `isCoreSlot()` (it is regime-dependent, so it is NOT baked into the slot).
 - Completion is **bi-directional**: read a slot's working step through
   `selectors.effectiveStepIndex()`, never the raw stored index — an already-achieved step
   must never be prescribed again.

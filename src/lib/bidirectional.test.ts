@@ -8,7 +8,7 @@
 
 import { describe, expect, it } from "vitest";
 import { effectiveStepIndex, skillFrontierIndex } from "./selectors";
-import { CORE_SLOTS, CORE_SLOT_COUNT, coreSlots, plan } from "../data/prescription";
+import { CORE_SLOTS, CORE_SLOT_COUNT, coreSlots, isCoreSlot, plan } from "../data/prescription";
 import { seedPlan } from "../data/seed-plan";
 import type { SkillProgress, Slot } from "./types";
 
@@ -44,13 +44,24 @@ describe("a workout is six exercises", () => {
     }
   });
 
-  it("keeps every other slot — flagged optional, never deleted", () => {
+  // `optional` is no longer baked into the slot: which six are prescribed depends on
+  // the athlete's regime, so it is computed at render time by isCoreSlot(). What must
+  // still hold is that nothing from the PDF is ever DROPPED.
+  it("keeps every PDF slot in the plan — never deletes one", () => {
     for (const [dayId, slots] of Object.entries(plan.days)) {
       const seed = (seedPlan.days as Record<string, Slot[]>)[dayId];
-      expect(slots.map((s) => s.id)).toEqual(seed.map((s) => s.id));
-      for (const s of slots) {
-        const isCore = (CORE_SLOTS[dayId] ?? []).includes(s.alternativeTo ?? s.id);
-        expect(Boolean(s.optional), `${dayId}/${s.id}`).toBe(!isCore);
+      const ids = slots.map((s) => s.id);
+      for (const s of seed) expect(ids, `${dayId}/${s.id}`).toContain(s.id);
+    }
+  });
+
+  it("marks exactly the non-core slots optional, per regime", () => {
+    for (const regime of ["calisthenic", "balanced", "powerlifting"] as const) {
+      for (const [dayId, slots] of Object.entries(plan.days)) {
+        const core = new Set(coreSlots(dayId, regime).map((s) => s.id));
+        for (const s of slots) {
+          expect(isCoreSlot(dayId, s, regime), `${regime}/${dayId}/${s.id}`).toBe(core.has(s.id));
+        }
       }
     }
   });
@@ -59,7 +70,7 @@ describe("a workout is six exercises", () => {
     const legs = (plan.days as Record<string, Slot[]>).legs;
     const alt = legs.find((s) => s.id === "legs-04-alt")!;
     expect(alt.alternativeTo).toBe("legs-04");
-    expect(alt.optional).toBeUndefined();
+    expect(isCoreSlot("legs", alt, "calisthenic")).toBe(true);
   });
 
   it("names only real slot ids in CORE_SLOTS", () => {

@@ -335,6 +335,24 @@ export const pullLeversExt: SectorExtension = {
       isStunt: true, evidence: "D", estMonths: [24, 48],
       description: "A strict bar muscle-up with +25% bodyweight. The transition is where it fails, every time. ♀ criterion 0.175×BW added.",
     }),
+
+    // ------------------------------------------- on-ramp lateral variants
+    // Grip changes at the bottom of the sector: same difficulty, different demand.
+    node("pull_base.hang_wide", "Wide Grip Hang", S, -2.4, hold(20, 3), ["pull.dead_hang"], {
+      evidence: "D",
+      description: "3×20 s hanging wider than shoulder width — harder on the lats and the shoulders than a standard hang.",
+    }),
+    node("pull_base.hang_mixed", "Mixed Grip Hang", S, -2.4, hold(30, 2), ["pull.dead_hang"], {
+      evidence: "D",
+      description: "2×30 s, one palm forward and one back, swapping each set. The grip a heavy deadlift actually uses.",
+    }),
+    node("pull_base.row_wide", "Wide Grip Row", S, -1.9, reps(10, 3), ["pull.row_bodyweight"], {
+      evidence: "D", description: "Bodyweight row with wide hands — more rear delt and mid-back, less biceps.",
+    }),
+    node("pull_base.row_underhand", "Underhand Row", S, -1.9, reps(10, 3), ["pull.row_bodyweight"], {
+      evidence: "D",
+      description: "Palms-up bodyweight row. The biceps do far more, which is why it feels easier and builds the first chin-up.",
+    }),
   ],
 
   // Splice the new easier work underneath the already-authored hubs. Every id on the

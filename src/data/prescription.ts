@@ -26,7 +26,7 @@
 // are not progressions with a harder variation to advance into, and 3×8 would destroy them.
 
 import { seedPlan } from "./seed-plan";
-import type { SeedPlan, Slot } from "../lib/types";
+import type { Regime, SeedPlan, Slot } from "../lib/types";
 
 /** R-DYN: advance the progression at 3 sets × 8 clean reps in one session. */
 export const RDYN_SETS = 3;
@@ -47,6 +47,107 @@ export const CONDITIONING_SLOTS: ReadonlySet<string> = new Set([
   "full-07", // Med-Ball Slam / Sledgehammer / Woodchopper — power-endurance variations,
   //            not a difficulty ladder with a harder rung to advance into.
 ]);
+
+// ---------------------------------------------------------------------------
+// Heavy slots — the barbell work doc 03 §14 prescribes and the PDF never had.
+//
+// The corpus is explicit on both counts. §14's session template gives every training
+// day "1 heavy squat/hinge @85%+ (3×3–5)", and §6 states plainly that the routine's
+// low-load tiers "will build size and endurance fine, but the 2× bodyweight lift goal
+// requires dedicated ≥85% work that must be added explicitly". These slots are that
+// work. They live here, never in seed-plan.ts, because they are not in the PDF.
+//
+// 3×5 (not R-DYN's 3×8): the heavy slot is a strength dose, and doc 03 §5 puts the
+// strength range at 75–85% for 6–10 reps with ≥85% for the max-strength goals. Rest
+// is 180 s (§7) and RIR 2–3 (§6.2) — the app surfaces those through the usual paths.
+
+const HEAVY_SETS = 3;
+const HEAVY_REPS = 5;
+
+/** One heavy barbell slot. Chain is hardest-first: barbell, then a loadable fallback. */
+function heavy(
+  id: string,
+  sector: Slot["sector"],
+  top: { n: string; ex: string },
+  fallback: { n: string; ex: string },
+): Slot {
+  return {
+    id,
+    sets: HEAVY_SETS,
+    tiers: [HEAVY_REPS],
+    sector,
+    note: "Heavy slot — doc 03 §14: ≥85% 1RM, 3×3–5, RIR 2–3, rest ~180 s.",
+    chain: [
+      { n: top.n, ex: top.ex, band: 0, load: true },
+      { n: fallback.n, ex: fallback.ex, band: 0, load: true },
+    ],
+  };
+}
+
+/** The barbell slots, keyed by the day they belong to. */
+export const HEAVY_SLOTS: Record<string, Slot[]> = {
+  legs: [
+    heavy("heavy-squat", "squat", { n: "Barbell Back Squat", ex: "barbell.back_squat" }, { n: "Goblet Squat", ex: "squat.dumbbell_squat" }),
+    heavy("heavy-deadlift", "posterior", { n: "Barbell Deadlift", ex: "barbell.deadlift" }, { n: "Romanian Deadlift", ex: "hinge.rdl" }),
+  ],
+  pull: [
+    heavy("heavy-row", "back_chain", { n: "Barbell Row", ex: "barbell.row" }, { n: "Bent Dumbbell Row", ex: "pull.bent_db_row" }),
+  ],
+  push: [
+    heavy("heavy-bench", "pushup", { n: "Barbell Bench Press", ex: "barbell.bench_press" }, { n: "Weighted Dip", ex: "dip.dip_weighted" }),
+    heavy("heavy-ohp", "dips_planche_hs", { n: "Barbell Overhead Press", ex: "barbell.ohp" }, { n: "Shoulder Press", ex: "push.shoulder_press" }),
+  ],
+  fullbody: [
+    heavy("heavy-clean", "back_chain", { n: "Power Clean", ex: "barbell.power_clean" }, { n: "Kettlebell Swing", ex: "hinge.kb_swing" }),
+  ],
+};
+
+/**
+ * Which chain slot each heavy slot REPLACES, per regime. Always same-pattern, so the
+ * day keeps every movement it owned and the exercise count stays at six:
+ *   heavy-squat    <- legs-04 (bilateral squat)
+ *   heavy-deadlift <- legs-03 (hinge)
+ *   heavy-row      <- pull-07 (curls; the row pattern is upgraded, biceps stay in it)
+ *   heavy-bench    <- push-05 (horizontal push volume)
+ *   heavy-ohp      <- push-02 (vertical push)
+ *   heavy-clean    <- full-02 (sandbag snatch — the power slot)
+ *
+ * calisthenic swaps nothing: doc 03 §14's heavy slot is already covered by the weighted
+ * chains the PDF has (weighted pistol on legs, weighted pull-up on pull, weighted dip
+ * on push).
+ */
+const SWAPS: Record<Regime, Record<string, Record<string, string>>> = {
+  calisthenic: { legs: {}, pull: {}, push: {}, fullbody: {} },
+  balanced: {
+    legs: { "legs-04": "heavy-squat" },
+    pull: { "pull-07": "heavy-row" },
+    push: { "push-05": "heavy-bench" },
+    fullbody: { "full-02": "heavy-clean" },
+  },
+  powerlifting: {
+    legs: { "legs-04": "heavy-squat", "legs-03": "heavy-deadlift" },
+    pull: { "pull-07": "heavy-row" },
+    push: { "push-05": "heavy-bench", "push-02": "heavy-ohp" },
+    fullbody: { "full-02": "heavy-clean" },
+  },
+};
+
+export const REGIME_LABEL: Record<Regime, string> = {
+  calisthenic: "Calisthenic",
+  balanced: "Balanced",
+  powerlifting: "Powerlifting",
+};
+
+export const REGIME_BLURB: Record<Regime, string> = {
+  calisthenic: "The PDF routine as written. Heavy work is weighted calisthenics — weighted pull-ups, dips and pistols.",
+  balanced: "One barbell lift a day: squat, row, bench, clean. Everything else stays bodyweight.",
+  powerlifting: "Six barbell sessions a week — squat, deadlift, row, bench, overhead press, clean — around the same calisthenics chains.",
+};
+
+/** Barbell slots this regime puts in the week. */
+export function heavySlotCount(regime: Regime): number {
+  return Object.values(SWAPS[regime]).reduce((n, m) => n + Object.keys(m).length, 0);
+}
 
 /**
  * The six exercises each day actually prescribes.
@@ -77,9 +178,15 @@ export const CORE_SLOTS: Record<string, readonly string[]> = {
 /** Slots per day after trimming — the answer to "how many exercises is this workout?". */
 export const CORE_SLOT_COUNT = 6;
 
-function isCore(dayId: string, slot: Slot): boolean {
-  const core = CORE_SLOTS[dayId] ?? [];
-  return core.includes(slot.alternativeTo ?? slot.id);
+/** The day's six slot ids under this regime, in plan order. */
+export function coreSlotIds(dayId: string, regime: Regime = "calisthenic"): string[] {
+  const swaps = SWAPS[regime]?.[dayId] ?? {};
+  return (CORE_SLOTS[dayId] ?? []).map((id) => swaps[id] ?? id);
+}
+
+/** Is this slot one of the day's six under this regime? */
+export function isCoreSlot(dayId: string, slot: Slot, regime: Regime = "calisthenic"): boolean {
+  return coreSlotIds(dayId, regime).includes(slot.alternativeTo ?? slot.id);
 }
 
 /** True when a slot is a progression the athlete advances ALONG, so R-DYN applies. */
@@ -97,26 +204,26 @@ export function toRdyn(slot: Slot): Slot {
 }
 
 /**
- * The plan the app trains. Same structure and the same slots as the PDF; strength chains
- * re-prescribed to R-DYN, and everything outside the day's core six flagged `optional`.
+ * Every slot the app knows about: the PDF's (R-DYN re-prescribed) plus the heavy barbell
+ * slots. ALL of them, in every regime — `slotById` and the stored-progress map are built
+ * from this, so a slot logged under one regime still resolves after switching to another.
+ * Which six are prescribed today is a separate question, answered by coreSlots().
  */
 export const plan: SeedPlan = {
   ...seedPlan,
   days: Object.fromEntries(
     Object.entries(seedPlan.days).map(([dayId, slots]) => [
       dayId,
-      slots.map((s) => {
-        const out = toRdyn(s);
-        return isCore(dayId, s) ? out : { ...out, optional: true };
-      }),
+      [...slots.map(toRdyn), ...(HEAVY_SLOTS[dayId] ?? [])],
     ]),
   ) as SeedPlan["days"],
 };
 
-/** The day's six — what the Workout screen actually prescribes. */
-export function coreSlots(dayId: string): Slot[] {
+/** The day's six — what the Workout screen actually prescribes, in plan order. */
+export function coreSlots(dayId: string, regime: Regime = "calisthenic"): Slot[] {
   const day = (plan.days as Record<string, Slot[]>)[dayId] ?? [];
-  return day.filter((s) => !s.optional);
+  const ids = coreSlotIds(dayId, regime);
+  return day.filter((s) => ids.includes(s.alternativeTo ?? s.id));
 }
 
 /**
@@ -128,9 +235,12 @@ export function coreSlots(dayId: string): Slot[] {
  */
 export const rdynRepsByExercise: Record<string, number> = (() => {
   const out: Record<string, number> = {};
+  const heavyIds = new Set(Object.values(HEAVY_SLOTS).flat().map((s) => s.id));
   for (const day of Object.values(plan.days)) {
     for (const slot of day) {
-      if (!isStrengthProgression(slot)) continue;
+      // Heavy slots are a 3x5 strength dose, not an R-DYN progression: they must not
+      // drag the tree's rep criteria down to 5.
+      if (heavyIds.has(slot.id) || !isStrengthProgression(slot)) continue;
       for (const step of slot.chain) {
         for (const id of step.ex ? [step.ex] : (step.opts ?? []).map((o) => o.ex)) {
           out[id] = RDYN_TARGET;
